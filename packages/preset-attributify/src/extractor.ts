@@ -1,4 +1,4 @@
-import type { Extractor } from '@unocss/core'
+import type { Extractor, ExtractorContext } from '@unocss/core'
 import { isValidSelector } from '@unocss/core'
 import type { AttributifyOptions } from '.'
 
@@ -8,22 +8,24 @@ const strippedPrefixes = [
 ]
 
 const splitterRE = /[\s'"`;]+/g
-const elementRE = /<\w(?=.*>)[\w:\.$-]*\s((?:['"`\{].*?['"`\}]|.*?)*?)>/gs
-const valuedAttributeRE = /([?]|(?!\d|-{2}|-\d)[a-zA-Z0-9\u00A0-\uFFFF-_:!%-]+)(?:={?(["'])([^\2]*?)\2}?)?/g
+const elementRE = /<[^>\s]*\s((?:'.*?'|".*?"|`.*?`|\{.*?\}|[^>]*?)*)/g
+const valuedAttributeRE = /([?]|(?!\d|-{2}|-\d)[a-zA-Z0-9\u00A0-\uFFFF-_:!%-.~<]+)=?(?:["]([^"]*)["]|[']([^']*)[']|[{]([^}]*)[}])?/gms
 
-export const defaultIgnoreAttributes = ['placeholder']
+export const defaultIgnoreAttributes = ['placeholder', 'fill', 'opacity', 'stroke-opacity']
 
-export const extractorAttributify = (options?: AttributifyOptions): Extractor => {
+export function extractorAttributify(options?: AttributifyOptions): Extractor {
   const ignoreAttributes = options?.ignoreAttributes ?? defaultIgnoreAttributes
   const nonValuedAttribute = options?.nonValuedAttribute ?? true
   const trueToNonValued = options?.trueToNonValued ?? false
 
   return {
-    name: 'attributify',
+    name: '@unocss/preset-attributify/extractor',
     extract({ code }) {
-      const result = Array.from(code.matchAll(elementRE))
+      return Array.from(code.matchAll(elementRE))
         .flatMap(match => Array.from((match[1] || '').matchAll(valuedAttributeRE)))
-        .flatMap(([, name, _, content]) => {
+        .flatMap(([, name, ...contents]) => {
+          const content = contents.filter(Boolean).join('')
+
           if (ignoreAttributes.includes(name))
             return []
 
@@ -49,15 +51,19 @@ export const extractorAttributify = (options?: AttributifyOptions): Extractor =>
               .split(splitterRE)
               .filter(isValidSelector)
           }
+          else if (elementRE.test(content)) {
+            elementRE.lastIndex = 0
+            return this.extract!({ code: content } as ExtractorContext) as string[]
+          }
           else {
-            return content
-              .split(splitterRE)
-              .filter(Boolean)
+            if (options?.prefixedOnly && options.prefix && !name.startsWith(options.prefix))
+              return []
+
+            return content.split(splitterRE)
+              .filter(v => Boolean(v) && v !== ':')
               .map(v => `[${name}~="${v}"]`)
           }
         })
-
-      return new Set(result)
     },
   }
 }

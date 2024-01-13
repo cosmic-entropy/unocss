@@ -1,4 +1,5 @@
-import type { Rule, Shortcut, VariantHandlerContext } from '@unocss/core'
+import type { CSSObject, Rule, Shortcut, VariantHandlerContext } from '@unocss/core'
+import { isString } from '@unocss/core'
 import type { Theme } from '@unocss/preset-mini'
 import { resolveBreakpoints } from '@unocss/preset-mini/utils'
 
@@ -7,24 +8,58 @@ const queryMatcher = /@media \(min-width: (.+)\)/
 export const container: Rule<Theme>[] = [
   [
     /^__container$/,
-    (m, { theme, variantHandlers }) => {
-      let width = '100%'
+    (m, context) => {
+      const { theme, variantHandlers } = context
+
+      const themePadding = theme.container?.padding
+      let padding: string | undefined
+
+      if (isString(themePadding))
+        padding = themePadding
+      else
+        padding = themePadding?.DEFAULT
+
+      const themeMaxWidth = theme.container?.maxWidth
+      let maxWidth: string | undefined
+
       for (const v of variantHandlers) {
         const query = v.handle?.({} as VariantHandlerContext, x => x)?.parent
-        if (typeof query === 'string') {
+        if (isString(query)) {
           const match = query.match(queryMatcher)?.[1]
-          if (match)
-            width = match
+          if (match) {
+            const bp = resolveBreakpoints(context) ?? []
+            const matchBp = bp.find(i => i.size === match)?.point
+
+            if (!themeMaxWidth)
+              maxWidth = match
+            else if (matchBp)
+              maxWidth = themeMaxWidth?.[matchBp]
+
+            if (matchBp && !isString(themePadding))
+              padding = themePadding?.[matchBp] ?? padding
+          }
         }
       }
+
+      const css: CSSObject = {
+        'max-width': maxWidth,
+      }
+
+      // only apply width: 100% when no variant handler is present
+      if (!variantHandlers.length)
+        css.width = '100%'
+
       if (theme.container?.center) {
-        return {
-          'max-width': width,
-          'margin-left': 'auto',
-          'margin-right': 'auto',
-        }
+        css['margin-left'] = 'auto'
+        css['margin-right'] = 'auto'
       }
-      return { 'max-width': width }
+
+      if (themePadding) {
+        css['padding-left'] = padding
+        css['padding-right'] = padding
+      }
+
+      return css
     },
     { internal: true },
   ],
@@ -32,7 +67,7 @@ export const container: Rule<Theme>[] = [
 
 export const containerShortcuts: Shortcut<Theme>[] = [
   [/^(?:(\w+)[:-])?container$/, ([, bp], context) => {
-    let points = Object.keys(resolveBreakpoints(context) ?? {})
+    let points = (resolveBreakpoints(context) ?? []).map(i => i.point)
     if (bp) {
       if (!points.includes(bp))
         return

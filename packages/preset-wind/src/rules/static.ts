@@ -1,5 +1,5 @@
 import type { Rule } from '@unocss/core'
-import { globalKeywords, handler as h, makeGlobalStaticRules, positionMap } from '@unocss/preset-mini/utils'
+import { globalKeywords, h, makeGlobalStaticRules, positionMap } from '@unocss/preset-mini/utils'
 
 export const textTransforms: Rule[] = [
   // tailwind compat
@@ -33,7 +33,8 @@ export const writingOrientations: Rule[] = [
 
 export const screenReadersAccess: Rule[] = [
   [
-    'sr-only', {
+    'sr-only',
+    {
       'position': 'absolute',
       'width': '1px',
       'height': '1px',
@@ -79,7 +80,7 @@ export const objectPositions: Rule[] = [
     if (positionMap[d])
       return { 'object-position': positionMap[d] }
     if (h.bracketOfPosition(d) != null)
-      return { 'object-position': h.bracketOfPosition(d)!.split(' ').map(e => h.position.fraction.auto.px.cssvar(e)).join(' ') }
+      return { 'object-position': h.bracketOfPosition(d)!.split(' ').map(e => h.position.fraction.auto.px.cssvar(e) ?? e).join(' ') }
   }, { autocomplete: `object-(${Object.keys(positionMap).join('|')})` }],
 
 ]
@@ -123,4 +124,16 @@ export const mixBlendModes: Rule[] = [
   ['mix-blend-plus-lighter', { 'mix-blend-mode': 'plus-lighter' }],
   ['mix-blend-normal', { 'mix-blend-mode': 'normal' }],
   ...makeGlobalStaticRules('mix-blend'),
+]
+
+export const dynamicViewportHeight: Rule[] = [
+  ['min-h-dvh', { 'min-height': '100dvh' }],
+  ['min-h-svh', { 'min-height': '100svh' }],
+  ['min-h-lvh', { 'min-height': '100lvh' }],
+  ['h-dvh', { height: '100dvh' }],
+  ['h-svh', { height: '100svh' }],
+  ['h-lvh', { height: '100lvh' }],
+  ['max-h-dvh', { 'max-height': '100dvh' }],
+  ['max-h-svh', { 'max-height': '100svh' }],
+  ['max-h-lvh', { 'max-height': '100lvh' }],
 ]

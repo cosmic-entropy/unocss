@@ -50,7 +50,7 @@ npm i -D @unocss/transformer-attributify-jsx
 ```
 
 ```ts
-// uno.config.js
+// uno.config.ts
 import { defineConfig, presetAttributify } from 'unocss'
 import transformerAttributifyJsx from '@unocss/transformer-attributify-jsx'
 
@@ -67,6 +67,8 @@ export default defineConfig({
 ```
 
 ## Caveats
+
+If you encounter any issues with this package, there is [@unocss/transformer-attributify-jsx-babel](https://github.com/unocss/unocss/tree/main/packages/transformer-attributify-jsx-babel) package that uses Babel to transform JSX.
 
 > ⚠️ The rules are almost the same as those of `preset-attributify`, but there are several precautions
 
@@ -86,7 +88,7 @@ Instead, you may want to use valued attributes instead:
 
 ## Blocklist
 
-This transformer will only transform attrubutes that are valid UnoCSS utilities.
+This transformer will only transform attributes that are valid UnoCSS utilities.
 You can also `blocklist` bypass some attributes from been transformed.
 
 ```js

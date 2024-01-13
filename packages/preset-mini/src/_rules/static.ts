@@ -1,7 +1,8 @@
 import type { Rule } from '@unocss/core'
-import { globalKeywords, handler as h, makeGlobalStaticRules } from '../utils'
+import { globalKeywords, h, makeGlobalStaticRules } from '../utils'
 
 const cursorValues = ['auto', 'default', 'none', 'context-menu', 'help', 'pointer', 'progress', 'wait', 'cell', 'crosshair', 'text', 'vertical-text', 'alias', 'copy', 'move', 'no-drop', 'not-allowed', 'grab', 'grabbing', 'all-scroll', 'col-resize', 'row-resize', 'n-resize', 'e-resize', 's-resize', 'w-resize', 'ne-resize', 'nw-resize', 'se-resize', 'sw-resize', 'ew-resize', 'ns-resize', 'nesw-resize', 'nwse-resize', 'zoom-in', 'zoom-out']
+const containValues = ['none', 'strict', 'content', 'size', 'inline-size', 'layout', 'style', 'paint']
 
 export const varEmpty = ' '
 
@@ -14,7 +15,7 @@ export const displays: Rule[] = [
   ['flow-root', { display: 'flow-root' }],
   ['list-item', { display: 'list-item' }],
   ['hidden', { display: 'none' }],
-  [/^display-(.+)$/, ([, c]) => ({ display: h.bracket.cssvar.global(c) || c })],
+  [/^display-(.+)$/, ([, c]) => ({ display: h.bracket.cssvar.global(c) })],
 ]
 
 export const appearances: Rule[] = [
@@ -28,6 +29,18 @@ export const appearances: Rule[] = [
 export const cursors: Rule[] = [
   [/^cursor-(.+)$/, ([, c]) => ({ cursor: h.bracket.cssvar.global(c) })],
   ...cursorValues.map((v): Rule => [`cursor-${v}`, { cursor: v }]),
+]
+
+export const contains: Rule[] = [
+  [/^contain-(.*)$/, ([, d]) => {
+    if (h.bracket(d) != null) {
+      return {
+        contain: h.bracket(d)!.split(' ').map(e => h.cssvar.fraction(e) ?? e).join(' '),
+      }
+    }
+
+    return containValues.includes(d) ? { contain: d } : undefined
+  }],
 ]
 
 export const pointerEvents: Rule[] = [
@@ -45,10 +58,10 @@ export const resizes: Rule[] = [
 ]
 
 export const userSelects: Rule[] = [
-  ['select-auto', { 'user-select': 'auto' }],
-  ['select-all', { 'user-select': 'all' }],
-  ['select-text', { 'user-select': 'text' }],
-  ['select-none', { 'user-select': 'none' }],
+  ['select-auto', { '-webkit-user-select': 'auto', 'user-select': 'auto' }],
+  ['select-all', { '-webkit-user-select': 'all', 'user-select': 'all' }],
+  ['select-text', { '-webkit-user-select': 'text', 'user-select': 'text' }],
+  ['select-none', { '-webkit-user-select': 'none', 'user-select': 'none' }],
   ...makeGlobalStaticRules('select', 'user-select'),
 ]
 
@@ -69,20 +82,29 @@ export const contentVisibility: Rule[] = [
 ]
 
 export const contents: Rule[] = [
-  [/^content-\[(.+)\]$/, ([, v]) => ({ content: `"${v}"` })],
-  [/^content-(\$.+)]$/, ([, v]) => ({ content: h.cssvar(v) })],
+  [/^content-(.+)$/, ([, v]) => ({ content: h.bracket.cssvar(v) })],
   ['content-empty', { content: '""' }],
-  ['content-none', { content: '""' }],
+  ['content-none', { content: 'none' }],
 ]
 
 export const breaks: Rule[] = [
   ['break-normal', { 'overflow-wrap': 'normal', 'word-break': 'normal' }],
   ['break-words', { 'overflow-wrap': 'break-word' }],
   ['break-all', { 'word-break': 'break-all' }],
+  ['break-keep', { 'word-break': 'keep-all' }],
+  ['break-anywhere', { 'overflow-wrap': 'anywhere' }],
+]
+
+export const textWraps: Rule[] = [
+  ['text-wrap', { 'text-wrap': 'wrap' }],
+  ['text-nowrap', { 'text-wrap': 'nowrap' }],
+  ['text-balance', { 'text-wrap': 'balance' }],
+  ['text-pretty', { 'text-wrap': 'pretty' }],
 ]
 
 export const textOverflows: Rule[] = [
   ['truncate', { 'overflow': 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }],
+  ['text-truncate', { 'overflow': 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }],
   ['text-ellipsis', { 'text-overflow': 'ellipsis' }],
   ['text-clip', { 'text-overflow': 'clip' }],
 ]
@@ -110,11 +132,9 @@ export const fontSmoothings: Rule[] = [
   ['antialiased', {
     '-webkit-font-smoothing': 'antialiased',
     '-moz-osx-font-smoothing': 'grayscale',
-    'font-smoothing': 'grayscale',
   }],
   ['subpixel-antialiased', {
     '-webkit-font-smoothing': 'auto',
     '-moz-osx-font-smoothing': 'auto',
-    'font-smoothing': 'auto',
   }],
 ]

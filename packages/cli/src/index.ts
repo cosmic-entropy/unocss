@@ -1,17 +1,19 @@
-import { existsSync, promises as fs } from 'fs'
-import { basename, dirname, relative, resolve } from 'pathe'
+import { existsSync, promises as fs } from 'node:fs'
+import process from 'node:process'
+import { basename, dirname, normalize, relative, resolve } from 'pathe'
 import fg from 'fast-glob'
-import consola from 'consola'
+import { consola } from 'consola'
 import { cyan, dim, green } from 'colorette'
 import { debounce } from 'perfect-debounce'
 import { toArray } from '@unocss/core'
-import { loadConfig } from '@unocss/config'
 import type { SourceCodeTransformerEnforce, UserConfig } from '@unocss/core'
-import { version } from '../package.json'
 import { createContext } from '../../shared-integration/src/context'
 import { applyTransformers } from '../../shared-integration/src/transformers'
-import { PrettyError, handleError } from './errors'
+import { version } from '../package.json'
+import { SKIP_COMMENT_RE } from '../../shared-integration/src/constants'
 import { defaultConfig } from './config'
+import { PrettyError, handleError } from './errors'
+import { getWatcher } from './watcher'
 import type { CliOptions, ResolvedCliOptions } from './types'
 
 const name = 'unocss'
@@ -31,10 +33,14 @@ export async function build(_options: CliOptions) {
 
   const cwd = _options.cwd || process.cwd()
   const options = await resolveOptions(_options)
-  const { config, sources: configSources } = await loadConfig(cwd, options.config)
 
-  const ctx = createContext<UserConfig>(config, defaultConfig)
+  async function loadConfig() {
+    const ctx = createContext<UserConfig>(options.config, defaultConfig)
+    const configSources = (await ctx.updateRoot(cwd)).sources.map(i => normalize(i))
+    return { ctx, configSources }
+  }
 
+  const { ctx, configSources } = await loadConfig()
   const files = await fg(options.patterns, { cwd, absolute: true })
   await Promise.all(
     files.map(async (file) => {
@@ -42,8 +48,17 @@ export async function build(_options: CliOptions) {
     }),
   )
 
+  if (options.stdout && options.outFile) {
+    consola.fatal(`Cannot use --stdout and --out-file at the same time`)
+    return
+  }
+
   consola.log(green(`${name} v${version}`))
-  consola.start(`UnoCSS ${options.watch ? 'in watch mode...' : 'for production...'}`)
+
+  if (options.watch)
+    consola.start('UnoCSS in watch mode...')
+  else
+    consola.start('UnoCSS for production...')
 
   const debouncedBuild = debounce(
     async () => {
@@ -55,17 +70,9 @@ export async function build(_options: CliOptions) {
   const startWatcher = async () => {
     if (!options.watch)
       return
-
-    const { watch } = await import('chokidar')
     const { patterns } = options
-    const ignored = ['**/{.git,node_modules}/**']
 
-    const watcher = watch(patterns, {
-      ignoreInitial: true,
-      ignorePermissionErrors: true,
-      ignored,
-      cwd,
-    })
+    const watcher = await getWatcher(options)
 
     if (configSources.length)
       watcher.add(configSources)
@@ -101,42 +108,50 @@ export async function build(_options: CliOptions) {
 
   await startWatcher().catch(handleError)
 
-  function transformFiles(sources: { id: string; code: string; transformedCode?: string | undefined }[], enforce: SourceCodeTransformerEnforce = 'default') {
+  function transformFiles(sources: { id: string, code: string, transformedCode?: string | undefined }[], enforce: SourceCodeTransformerEnforce = 'default') {
     return Promise.all(
-      sources.map(({ id, code, transformedCode }) => new Promise<{ id: string; code: string; transformedCode: string | undefined }>((resolve) => {
+      sources.map(({ id, code, transformedCode }) => new Promise<{ id: string, code: string, transformedCode: string | undefined }>((resolve) => {
         applyTransformers(ctx, code, id, enforce)
           .then((transformsRes) => {
             resolve({ id, code, transformedCode: transformsRes?.code || transformedCode })
           })
-      })))
+      })),
+    )
   }
 
   async function generate(options: ResolvedCliOptions) {
     const sourceCache = Array.from(fileCache).map(([id, code]) => ({ id, code }))
-
-    const outFile = resolve(options.cwd || process.cwd(), options.outFile ?? 'uno.css')
 
     const preTransform = await transformFiles(sourceCache, 'pre')
     const defaultTransform = await transformFiles(preTransform)
     const postTransform = await transformFiles(defaultTransform, 'post')
 
     // update source file
-    await Promise.all(
-      postTransform.filter(({ transformedCode }) => !!transformedCode)
-        .map(({ transformedCode, id }) => new Promise<void>((resolve) => {
-          if (existsSync(id))
-            fs.writeFile(id, transformedCode as string, 'utf-8').then(resolve)
-        })),
-    )
+    if (options.writeTransformed) {
+      await Promise.all(
+        postTransform
+          .filter(({ transformedCode }) => !!transformedCode)
+          .map(({ transformedCode, id }) => new Promise<void>((resolve) => {
+            if (existsSync(id))
+              fs.writeFile(id, transformedCode as string, 'utf-8').then(resolve)
+          })),
+      )
+    }
 
     const { css, matched } = await ctx.uno.generate(
-      [...postTransform.map(({ code, transformedCode }) => transformedCode ?? code)].join('\n'),
+      [...postTransform.map(({ code, transformedCode }) => (transformedCode ?? code).replace(SKIP_COMMENT_RE, ''))].join('\n'),
       {
         preflights: options.preflights,
         minify: options.minify,
       },
     )
 
+    if (options.stdout) {
+      process.stdout.write(css)
+      return
+    }
+
+    const outFile = resolve(options.cwd || process.cwd(), options.outFile ?? 'uno.css')
     const dir = dirname(outFile)
     if (!existsSync(dir))
       await fs.mkdir(dir, { recursive: true })

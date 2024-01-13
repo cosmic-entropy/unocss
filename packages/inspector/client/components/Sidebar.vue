@@ -3,8 +3,8 @@ import { moduleTree } from '../composables/fetch'
 </script>
 
 <template>
-  <div h-full>
-    <div b="r main" of-hidden>
+  <div h-full border="r main">
+    <div of-hidden>
       <NarBar />
       <div
         pt="4"
@@ -22,10 +22,10 @@ import { moduleTree } from '../composables/fetch'
             REPL
           </span>
         </RouterLink>
-        <div b="b main" />
+        <div border="b main" />
       </div>
     </div>
-    <div b="r main" class="scrolls scrolls-sidebar">
+    <div class="scrolls scrolls-sidebar">
       <ModuleTreeNode
         v-if="Object.keys(moduleTree.workspace.children).length"
         :node="moduleTree.workspace"
@@ -37,6 +37,12 @@ import { moduleTree } from '../composables/fetch'
         :node="moduleTree.root"
         p="l3 t4"
         icon="i-carbon-vmdk-disk"
+      />
+      <ModuleTreeNode
+        v-if="Object.keys(moduleTree.nodeModules.children).length"
+        :node="moduleTree.nodeModules"
+        p="l3 t4"
+        icon="i-carbon-categories"
       />
     </div>
   </div>

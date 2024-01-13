@@ -1,5 +1,11 @@
 import type { AutoCompleteFunction, SuggestResult } from '@unocss/core'
-import type LRU from 'lru-cache'
+import type { LRUCache } from 'lru-cache'
+
+export type AutoCompleteMatchType = 'prefix' | 'fuzzy'
+
+export interface AutocompleteOptions {
+  matchType?: AutoCompleteMatchType
+}
 
 export type AutocompleteTemplatePart = AutocompleteTemplateStatic | AutocompleteTemplateGroup | AutocompleteTemplateTheme
 
@@ -20,14 +26,14 @@ export interface AutocompleteTemplateTheme {
 
 export interface ParsedAutocompleteTemplate {
   parts: AutocompleteTemplatePart[]
-  suggest(input: string): string[] | undefined
+  suggest(input: string, matchType?: AutoCompleteMatchType): string[] | undefined
 }
 
 export interface UnocssAutocomplete {
-  suggest: (input: string) => Promise<string[]>
+  suggest: (input: string, allowsEmptyInput?: boolean) => Promise<string[]>
   suggestInFile: (content: string, cursor: number) => Promise<SuggestResult>
   templates: (string | AutoCompleteFunction)[]
-  cache: LRU<string, string[]>
+  cache: LRUCache<string, string[]>
   reset: () => void
   enumerate: () => Promise<Set<string>>
 }

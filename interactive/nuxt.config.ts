@@ -1,5 +1,4 @@
-import { defineNuxtConfig } from 'nuxt'
-
+import { resolve } from 'node:path'
 import { alias } from '../alias'
 
 const externals = [
@@ -14,12 +13,23 @@ export default defineNuxtConfig({
   alias,
   modules: [
     '@vueuse/nuxt',
-    '~/../packages/nuxt/src/index.ts',
+    '@nuxt/devtools',
+    '../packages/nuxt/src/index.ts',
     '~/modules/markdown',
   ],
   ssr: false,
+  spaLoadingTemplate: './spa-loading-template.html',
   experimental: {
     reactivityTransform: true,
+  },
+  app: {
+    baseURL: '/interactive/',
+  },
+  nitro: {
+    rootDir: resolve(__dirname, '..'),
+    output: {
+      publicDir: resolve(__dirname, '../docs/dist/interactive/'),
+    },
   },
   postcss: {
     plugins: {
@@ -46,6 +56,9 @@ export default defineNuxtConfig({
     },
     optimizeDeps: {
       exclude: externals,
+    },
+    define: {
+      'process.env.VSCODE_TEXTMATE_DEBUG': 'false',
     },
     build: {
       rollupOptions: {

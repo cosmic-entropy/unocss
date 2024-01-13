@@ -66,15 +66,12 @@ export const presetWindTargets: string[] = [
   'bg-repeat-revert',
   'bg-right-bottom',
   'bg-scroll',
-  'bg-[length:10_20rem]',
-  'bg-[length:1/2_20rem]',
-  'bg-[position:10_20rem]',
-  'bg-[position:1/2_20rem]',
-  'bg-[position:bottom_left_10%]',
-  'bg-[position:top_right_1/3]',
 
   // bg gradient
   'from-current',
+  'from-10%',
+  'via-20%',
+  'to-90%',
   'from-green-500',
   'from-green-500/50',
   'from-transparent',
@@ -129,6 +126,8 @@ export const presetWindTargets: string[] = [
   'list-disc-outside',
   'list-alpha-inside',
   'list-inherit',
+  'list-image-[url(https://test.unocss.png)]',
+  'list-image-none',
   'box-decoration-slice',
   'box-decoration-initial',
   'accent-op-90',
@@ -279,6 +278,7 @@ export const presetWindTargets: string[] = [
   'space-y-4',
   'space-x-reverse',
   'space-x-$space',
+  'space-x-[var(--space)]',
   'space-inline-2',
   'space-block-4',
   'space-block-none',
@@ -366,6 +366,9 @@ export const presetWindTargets: string[] = [
   // variants combinators
   'svg:fill-red',
 
+  // variants supports: grid
+  'supports-grid:block',
+
   // variants media: contrasts, motions, orientations
   'contrast-more:bg-black',
   'uno-layer-_pre:contrast-less:bg-gray-3',
@@ -382,14 +385,41 @@ export const presetWindTargets: string[] = [
   '!animate-ping',
   '-backdrop-hue-rotate-90',
   '-hue-rotate-90',
+  '-hue-rotate--90',
+  '-hue-rotate-[var(--for-hue,0.5turn)]',
   'hover:animate-bounce',
 
   '-scroll-mb-px',
   '-scroll-p-px',
   '-space-x-4',
 
+  // variants experimental
+  '@hover-text-red',
+  '@hover:[[open]_&]:text-blue',
+
   // variants - multiple parents
   '@dark:contrast-more:p-10',
+
+  // variants - aria (theme)
+  'aria-hidden:hidden',
+
+  // variants - data (theme)
+  'data-dropdown:ring-green',
+
+  // view-transition
+  'view-transition-foo',
+  'view-transition-none',
+
+  // dynamic viewport height
+  'h-svh',
+  'h-dvh',
+  'h-lvh',
+  'min-h-dvh',
+  'min-h-lvh',
+  'min-h-svh',
+  'max-h-dvh',
+  'max-h-svh',
+  'max-h-lvh',
 ]
 
 export const presetWindNonTargets: string[] = [

@@ -1,29 +1,41 @@
+import process from 'node:process'
 import type { UserConfig, UserConfigDefaults } from '@unocss/core'
 import type { ResolvedUnpluginOptions, UnpluginOptions } from 'unplugin'
 import { createUnplugin } from 'unplugin'
 import WebpackSources from 'webpack-sources'
 import { createContext } from '../../shared-integration/src/context'
+import { setupContentExtractor } from '../../shared-integration/src/content'
 import { getHash } from '../../shared-integration/src/hash'
 import { HASH_PLACEHOLDER_RE, LAYER_MARK_ALL, LAYER_PLACEHOLDER_RE, RESOLVED_ID_RE, getHashPlaceholder, getLayerPlaceholder, resolveId, resolveLayer } from '../../shared-integration/src/layers'
 import { applyTransformers } from '../../shared-integration/src/transformers'
 import { getPath, isCssId } from '../../shared-integration/src/utils'
 
-export interface WebpackPluginOptions<Theme extends {} = {}> extends UserConfig<Theme> {}
+export interface WebpackPluginOptions<Theme extends object = object> extends UserConfig<Theme> {
+  /**
+   * Manually enable watch mode
+   *
+   * @default false
+   */
+  watch?: boolean
+}
 
 const PLUGIN_NAME = 'unocss:webpack'
 const UPDATE_DEBOUNCE = 10
 
-export function defineConfig<Theme extends {}>(config: WebpackPluginOptions<Theme>) {
+export function defineConfig<Theme extends object>(config: WebpackPluginOptions<Theme>) {
   return config
 }
 
-export default function WebpackPlugin<Theme extends {}>(
+export default function WebpackPlugin<Theme extends object>(
   configOrPath?: WebpackPluginOptions<Theme> | string,
   defaults?: UserConfigDefaults,
 ) {
   return createUnplugin(() => {
-    const ctx = createContext<WebpackPluginOptions>(configOrPath as any, defaults)
-    const { uno, tokens, filter, extract, onInvalidate } = ctx
+    const ctx = createContext<WebpackPluginOptions>(configOrPath as any, {
+      envMode: process.env.NODE_ENV === 'development' ? 'dev' : 'build',
+      ...defaults,
+    })
+    const { uno, tokens, filter, extract, onInvalidate, tasks, flushTasks } = ctx
 
     let timer: any
     onInvalidate(() => {
@@ -41,15 +53,17 @@ export default function WebpackPlugin<Theme extends {}>(
       )
     }
 
-    const tasks: Promise<any>[] = []
+    // TODO: detect webpack's watch mode and enable watcher
+    tasks.push(setupContentExtractor(ctx, typeof configOrPath === 'object' && configOrPath?.watch))
+
     const entries = new Set<string>()
     const hashes = new Map<string, string>()
 
-    const plugin = <UnpluginOptions>{
+    const plugin = {
       name: 'unocss:webpack',
       enforce: 'pre',
       transformInclude(id) {
-        return filter('', id) && !id.match(/\.html$/) && !RESOLVED_ID_RE.test(id)
+        return filter('', id) && !id.endsWith('.html') && !RESOLVED_ID_RE.test(id)
       },
       async transform(code, id) {
         const result = await applyTransformers(ctx, code, id, 'pre')
@@ -92,7 +106,7 @@ export default function WebpackPlugin<Theme extends {}>(
           compilation.hooks.optimizeAssets.tapPromise(PLUGIN_NAME, async () => {
             const files = Object.keys(compilation.assets)
 
-            await Promise.all(tasks)
+            await flushTasks()
             const result = await uno.generate(tokens, { minify: true })
 
             for (const file of files) {
@@ -108,7 +122,7 @@ export default function WebpackPlugin<Theme extends {}>(
                 const css = layer === LAYER_MARK_ALL
                   ? result.getLayers(undefined, Array.from(entries)
                     .map(i => resolveLayer(i)).filter((i): i is string => !!i))
-                  : result.getLayer(layer) || ''
+                  : (result.getLayer(layer) || '')
 
                 if (!quote)
                   return css
@@ -126,14 +140,14 @@ export default function WebpackPlugin<Theme extends {}>(
           })
         })
       },
-    } as Required<ResolvedUnpluginOptions>
+    } as UnpluginOptions as Required<ResolvedUnpluginOptions>
 
     let lastTokenSize = tokens.size
     async function updateModules() {
       if (!plugin.__vfsModules)
         return
 
-      await Promise.all(tasks)
+      await flushTasks()
       const result = await uno.generate(tokens)
       if (lastTokenSize === tokens.size)
         return
@@ -141,14 +155,14 @@ export default function WebpackPlugin<Theme extends {}>(
       lastTokenSize = tokens.size
       Array.from(plugin.__vfsModules)
         .forEach((id) => {
-          const path = id.slice(plugin.__virtualModulePrefix.length).replace(/\\/g, '/')
+          const path = decodeURIComponent(id.slice(plugin.__virtualModulePrefix.length))
           const layer = resolveLayer(path)
           if (!layer)
             return
           const code = layer === LAYER_MARK_ALL
             ? result.getLayers(undefined, Array.from(entries)
               .map(i => resolveLayer(i)).filter((i): i is string => !!i))
-            : result.getLayer(layer) || ''
+            : (result.getLayer(layer) || '')
 
           const hash = getHash(code)
           hashes.set(path, hash)
@@ -168,4 +182,3 @@ function getLayer(id: string) {
   }
   return layer
 }
-

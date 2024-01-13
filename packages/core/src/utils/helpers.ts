@@ -3,6 +3,7 @@ import type { ParsedUtil, RawUtil, StringifiedUtil, Variant, VariantObject } fro
 export const attributifyRE = /^\[(.+?)~?="(.*)"\]$/
 export const cssIdRE = /\.(css|postcss|sass|scss|less|stylus|styl)($|\?)/
 export const validateFilterRE = /[\w\u00A0-\uFFFF-_:%-?]/
+
 export const CONTROL_SHORTCUT_NO_MERGE = '$$shortcut-no-merge'
 
 export function isAttributifySelector(selector: string) {
@@ -13,7 +14,7 @@ export function isValidSelector(selector = ''): selector is string {
   return validateFilterRE.test(selector)
 }
 
-export function normalizeVariant(variant: Variant): VariantObject {
+export function normalizeVariant(variant: Variant<any>): VariantObject<any> {
   return typeof variant === 'function'
     ? { match: variant }
     : variant

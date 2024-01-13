@@ -1,6 +1,7 @@
-import { dirname, resolve } from 'path'
-import fs from 'fs'
-import type { UserConfig } from '@unocss/core'
+import { dirname, resolve } from 'node:path'
+import fs from 'node:fs'
+import process from 'node:process'
+import type { UserConfig, UserConfigDefaults } from '@unocss/core'
 import type { LoadConfigResult, LoadConfigSource } from 'unconfig'
 import { createConfigLoader as createLoader } from 'unconfig'
 
@@ -10,6 +11,7 @@ export async function loadConfig<U extends UserConfig>(
   cwd = process.cwd(),
   configOrPath: string | U = cwd,
   extraConfigSources: LoadConfigSource[] = [],
+  defaults: UserConfigDefaults = {},
 ): Promise<LoadConfigResult<U>> {
   let inlineConfig = {} as U
   if (typeof configOrPath !== 'string') {
@@ -55,7 +57,7 @@ export async function loadConfig<U extends UserConfig>(
   })
 
   const result = await loader.load()
-  result.config = result.config || inlineConfig
+  result.config = Object.assign(defaults, result.config || inlineConfig)
   if (result.config.configDeps) {
     result.sources = [
       ...result.sources,

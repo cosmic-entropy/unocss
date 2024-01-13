@@ -1,11 +1,15 @@
 import { defineConfig } from 'vite'
-import Unocss from 'unocss/vite'
+import UnoCSS from 'unocss/vite'
 
 export default defineConfig({
   plugins: [
-    Unocss({
+    UnoCSS({
       mergeSelectors: false,
-      include: [/\.js$/],
+      content: {
+        pipeline: {
+          include: [/\.js$/],
+        },
+      },
     }),
   ],
 })

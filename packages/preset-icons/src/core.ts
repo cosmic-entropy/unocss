@@ -1,18 +1,22 @@
-import type { Preset } from '@unocss/core'
-import { warnOnce } from '@unocss/core'
+import { definePreset, warnOnce } from '@unocss/core'
 import type {
   IconifyLoaderOptions,
   UniversalIconLoader,
 } from '@iconify/utils/lib/loader/types'
 import { encodeSvgForCss } from '@iconify/utils/lib/svg/encode-svg-for-css'
+import type { IconifyJSON } from '@iconify/types'
+import { loadIcon } from '@iconify/utils/lib/loader/loader'
+import { searchForIcon } from '@iconify/utils/lib/loader/modern'
 import type { IconsOptions } from './types'
+import icons from './collections.json'
 
 const COLLECTION_NAME_PARTS_MAX = 3
 
 export { IconsOptions }
+export { icons }
 
 export function createPresetIcons(lookupIconLoader: (options: IconsOptions) => Promise<UniversalIconLoader>) {
-  return function presetIcons(options: IconsOptions = {}): Preset {
+  return definePreset((options: IconsOptions = {}) => {
     const {
       scale = 1,
       mode = 'auto',
@@ -57,7 +61,7 @@ export function createPresetIcons(lookupIconLoader: (options: IconsOptions) => P
       options,
       layers: { icons: -30 },
       rules: [[
-        /^([a-z0-9:-]+)(?:\?(mask|bg|auto))?$/,
+        /^([a-z0-9:_-]+)(?:\?(mask|bg|auto))?$/,
         async ([full, body, _mode = mode]) => {
           let collection = ''
           let name = ''
@@ -93,14 +97,16 @@ export function createPresetIcons(lookupIconLoader: (options: IconsOptions) => P
             _mode = svg.includes('currentColor') ? 'mask' : 'bg'
 
           if (_mode === 'mask') {
-          // Thanks to https://codepen.io/noahblon/post/coloring-svgs-in-css-background-images
+            // Thanks to https://codepen.io/noahblon/post/coloring-svgs-in-css-background-images
             return {
               '--un-icon': url,
-              'mask': 'var(--un-icon) no-repeat',
-              'mask-size': '100% 100%',
               '-webkit-mask': 'var(--un-icon) no-repeat',
+              'mask': 'var(--un-icon) no-repeat',
               '-webkit-mask-size': '100% 100%',
+              'mask-size': '100% 100%',
               'background-color': 'currentColor',
+              // for Safari https://github.com/elk-zone/elk/pull/264
+              'color': 'inherit',
               ...usedProps,
             }
           }
@@ -116,15 +122,48 @@ export function createPresetIcons(lookupIconLoader: (options: IconsOptions) => P
         { layer, prefix },
       ]],
     }
-  }
+  })
 }
 
 export function combineLoaders(loaders: UniversalIconLoader[]) {
-  return <UniversalIconLoader>(async (...args) => {
+  return (async (...args) => {
     for (const loader of loaders) {
+      if (!loader)
+        continue
       const result = await loader(...args)
       if (result)
         return result
     }
-  })
+  }) as UniversalIconLoader
+}
+
+export function createCDNFetchLoader(fetcher: (url: string) => Promise<any>, cdnBase: string): UniversalIconLoader {
+  const cache = new Map<string, Promise<IconifyJSON>>()
+
+  function fetchCollection(name: string) {
+    if (!icons.includes(name))
+      return undefined
+    if (!cache.has(name))
+      cache.set(name, fetcher(`${cdnBase}@iconify-json/${name}/icons.json`))
+    return cache.get(name)!
+  }
+
+  return async (collection, icon, options) => {
+    let result = await loadIcon(collection, icon, options)
+    if (result)
+      return result
+
+    const iconSet = await fetchCollection(collection)
+    if (iconSet) {
+      // possible icon names
+      const ids = [
+        icon,
+        icon.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase(),
+        icon.replace(/([a-z])(\d+)/g, '$1-$2'),
+      ]
+      result = await searchForIcon(iconSet, collection, ids, options)
+    }
+
+    return result
+  }
 }

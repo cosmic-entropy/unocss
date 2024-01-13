@@ -10,13 +10,17 @@
     "test": "elm-test-rs"
   },
   "devDependencies": {
-    "@iconify-json/logos": "^1.1.16",
+    "@iconify-json/logos": "^1.1.42",
     "@unocss/core": "link:../../packages/core",
     "@unocss/preset-icons": "link:../../packages/preset-icons",
     "@unocss/preset-uno": "link:../../packages/preset-uno",
-    "elm-tooling": "^1.8.0",
+    "elm-tooling": "^1.15.0",
     "unocss": "link:../../packages/unocss",
-    "vite": "^3.1.2",
-    "vite-plugin-elm": "^2.7.2"
+    "vite": "^5.0.10",
+    "vite-plugin-elm": "^2.8.0"
+  },
+  "stackblitz": {
+    "installDependencies": false,
+    "startCommand": "node .stackblitz.mjs && npm install && npm run dev"
   }
 }

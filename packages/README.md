@@ -18,7 +18,11 @@
 | [@unocss/transformer-directives](./transformer-directives) | Transformer for CSS directives like `@apply` | ✅ | No |
 | [@unocss/transformer-compile-class](./transformer-compile-class) | Compile group of classes into one class | ✅ | No |
 | [@unocss/transformer-attributify-jsx](./transformer-attributify-jsx) | Support valueless attributify in JSX/TSX | ✅ | No |
+| [@unocss/transformer-attributify-jsx-babel](./transformer-attributify-jsx) | Support valueless attributify in JSX/TSX (Babel) | No | No |
 | [@unocss/extractor-pug](./extractor-pug) | Extractor for Pug | No | - |
+| [@unocss/extractor-svelte](./extractor-svelte) | Extractor for Svelte | No | - |
+| [@unocss/extractor-mdc](./extractor-mdc) | Extractor for MDC | No | - |
+| [@unocss/extractor-arbitrary-variants](./extractor-arbitrary-variants) | Arbitrary variants for utils | ✅ | No |
 | [@unocss/autocomplete](./autocomplete) | Utils for autocomplete | No | - |
 | [@unocss/config](./config) | Configuration file loader | ✅ | - |
 | [@unocss/reset](./reset) | Collection of common CSS resets | ✅ | No |
@@ -27,4 +31,7 @@
 | [@unocss/webpack](./webpack) | The Webpack plugin | No | - |
 | [@unocss/nuxt](./nuxt) | The Nuxt Module | No | - |
 | [@unocss/runtime](./runtime) | CSS-in-JS Runtime for UnoCSS | No | - |
+| [@unocss/eslint-plugin](./eslint-plugin) | ESLint plugin | No | - |
+| [@unocss/eslint-config](./eslint-config) | ESLint config | No | - |
+| [@unocss/rule-utils](./rule-utils) | The utilities for creating rules/presets for UnoCSS | No | - |
 | [VS Code Extension](./vscode) | UnoCSS for VS Code | - | - |

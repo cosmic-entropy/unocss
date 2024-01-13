@@ -1,29 +1,32 @@
 import { createNanoEvents } from '../utils/events'
-import type { CSSEntries, CSSObject, DynamicRule, ExtractorContext, GenerateOptions, GenerateResult, ParsedUtil, PreflightContext, PreparedRule, RawUtil, ResolvedConfig, RuleContext, RuleMeta, Shortcut, ShortcutValue, StringifiedUtil, UserConfig, UserConfigDefaults, UtilObject, Variant, VariantContext, VariantHandler, VariantHandlerContext, VariantMatchedResult } from '../types'
+import type { CSSEntries, CSSObject, DynamicRule, ExtendedTokenInfo, ExtractorContext, GenerateOptions, GenerateResult, ParsedUtil, PreflightContext, PreparedRule, RawUtil, ResolvedConfig, RuleContext, RuleMeta, Shortcut, ShortcutValue, StringifiedUtil, UserConfig, UserConfigDefaults, UtilObject, Variant, VariantContext, VariantHandler, VariantHandlerContext, VariantMatchedResult } from '../types'
 import { resolveConfig } from '../config'
-import { CONTROL_SHORTCUT_NO_MERGE, TwoKeyMap, e, entriesToCss, expandVariantGroup, isRawUtil, isStaticShortcut, isString, noop, normalizeCSSEntries, normalizeCSSValues, notNull, uniq, warnOnce } from '../utils'
+import { CONTROL_SHORTCUT_NO_MERGE, CountableSet, TwoKeyMap, e, entriesToCss, expandVariantGroup, isCountableSet, isRawUtil, isStaticShortcut, isString, noop, normalizeCSSEntries, normalizeCSSValues, notNull, toArray, uniq, warnOnce } from '../utils'
 import { version } from '../../package.json'
 import { LAYER_DEFAULT, LAYER_PREFLIGHTS } from '../constants'
 
-export class UnoGenerator {
+export class UnoGenerator<Theme extends object = object> {
   public version = version
-  private _cache = new Map<string, StringifiedUtil[] | null>()
-  public config: ResolvedConfig
+  private _cache = new Map<string, StringifiedUtil<Theme>[] | null>()
+  public config: ResolvedConfig<Theme>
   public blocked = new Set<string>()
   public parentOrders = new Map<string, number>()
   public events = createNanoEvents<{
-    config: (config: ResolvedConfig) => void
+    config: (config: ResolvedConfig<Theme>) => void
   }>()
 
   constructor(
-    public userConfig: UserConfig = {},
-    public defaults: UserConfigDefaults = {},
+    public userConfig: UserConfig<Theme> = {},
+    public defaults: UserConfigDefaults<Theme> = {},
   ) {
     this.config = resolveConfig(userConfig, defaults)
     this.events.emit('config', this.config)
   }
 
-  setConfig(userConfig?: UserConfig, defaults?: UserConfigDefaults) {
+  setConfig(
+    userConfig?: UserConfig<Theme>,
+    defaults?: UserConfigDefaults<Theme>,
+  ): void {
     if (!userConfig)
       return
     if (defaults)
@@ -36,26 +39,50 @@ export class UnoGenerator {
     this.events.emit('config', this.config)
   }
 
-  async applyExtractors(code: string, id?: string, set = new Set<string>()) {
+  applyExtractors(
+    code: string,
+    id?: string,
+    extracted?: Set<string>,
+  ): Promise<Set<string>>
+  applyExtractors(
+    code: string,
+    id?: string,
+    extracted?: CountableSet<string>,
+  ): Promise<CountableSet<string>>
+  async applyExtractors(
+    code: string,
+    id?: string,
+    extracted: Set<string> | CountableSet<string> = new Set<string>(),
+  ): Promise<Set<string> | CountableSet<string>> {
     const context: ExtractorContext = {
-      get original() { return code },
+      original: code,
       code,
       id,
+      extracted,
+      envMode: this.config.envMode,
     }
 
     for (const extractor of this.config.extractors) {
-      const result = await extractor.extract(context)
-      if (result) {
+      const result = await extractor.extract?.(context)
+
+      if (!result)
+        continue
+
+      if (isCountableSet(result) && isCountableSet(extracted)) {
         for (const token of result)
-          set.add(token)
+          extracted.setCount(token, extracted.getCount(token) + result.getCount(token))
+      }
+      else {
+        for (const token of result)
+          extracted.add(token)
       }
     }
 
-    return set
+    return extracted
   }
 
-  makeContext(raw: string, applied: VariantMatchedResult) {
-    const context: RuleContext = {
+  makeContext(raw: string, applied: VariantMatchedResult<Theme>): RuleContext<Theme> {
+    const context: RuleContext<Theme> = {
       rawSelector: raw,
       currentSelector: applied[1],
       theme: this.config.theme,
@@ -67,7 +94,10 @@ export class UnoGenerator {
     return context
   }
 
-  async parseToken(raw: string, alias?: string) {
+  async parseToken(
+    raw: string,
+    alias?: string,
+  ): Promise<StringifiedUtil<Theme>[] | undefined | null> {
     if (this.blocked.has(raw))
       return
 
@@ -87,7 +117,7 @@ export class UnoGenerator {
       return
     }
 
-    const applied = this.matchVariants(raw, current)
+    const applied = await this.matchVariants(raw, current)
 
     if (!applied || this.isBlocked(applied[1])) {
       this.blocked.add(raw)
@@ -95,62 +125,76 @@ export class UnoGenerator {
       return
     }
 
-    const context = this.makeContext(
-      raw,
-      [alias || applied[0], applied[1], applied[2], applied[3]],
-    )
+    const context = this.makeContext(raw, [alias || applied[0], applied[1], applied[2], applied[3]])
 
     if (this.config.details)
       context.variants = [...applied[3]]
 
     // expand shortcuts
-    const expanded = this.expandShortcut(context.currentSelector, context)
-    if (expanded) {
-      const utils = await this.stringifyShortcuts(context.variantMatch, context, expanded[0], expanded[1])
-      if (utils?.length) {
-        this._cache.set(cacheKey, utils)
-        return utils
-      }
-    }
-    // no shortcut
-    else {
-      const utils = (await this.parseUtil(context.variantMatch, context))?.map(i => this.stringifyUtil(i, context)).filter(notNull)
-      if (utils?.length) {
-        this._cache.set(cacheKey, utils)
-        return utils
-      }
+    const expanded = await this.expandShortcut(context.currentSelector, context)
+    const utils = expanded
+      ? await this.stringifyShortcuts(context.variantMatch, context, expanded[0], expanded[1])
+      // no shortcuts
+      : (await this.parseUtil(context.variantMatch, context))?.map(i => this.stringifyUtil(i, context)).filter(notNull)
+
+    if (utils?.length) {
+      this._cache.set(cacheKey, utils)
+      return utils
     }
 
     // set null cache for unmatched result
     this._cache.set(cacheKey, null)
   }
 
+  generate(
+    input: string | Set<string> | CountableSet<string> | string[],
+    options?: GenerateOptions<false>
+  ): Promise<GenerateResult<Set<string>>>
+  generate(
+    input: string | Set<string> | CountableSet<string> | string[],
+    options?: GenerateOptions<true>
+  ): Promise<GenerateResult<Map<string, ExtendedTokenInfo<Theme>>>>
   async generate(
-    input: string | Set<string> | string[],
-    options: GenerateOptions = {},
-  ): Promise<GenerateResult> {
+    input: string | Set<string> | CountableSet<string> | string[],
+    options: GenerateOptions<boolean> = {},
+  ): Promise<GenerateResult<unknown>> {
     const {
       id,
       scope,
       preflights = true,
       safelist = true,
       minify = false,
+      extendedInfo = false,
     } = options
 
-    const tokens: Readonly<Set<string>> = isString(input)
-      ? await this.applyExtractors(input, id)
+    const tokens: Readonly<Set<string> | CountableSet<string>> = isString(input)
+      ? await this.applyExtractors(
+        input,
+        id,
+        extendedInfo
+          ? new CountableSet<string>()
+          : new Set<string>(),
+      )
       : Array.isArray(input)
-        ? new Set(input)
+        ? new Set<string>(input)
         : input
 
-    if (safelist)
-      this.config.safelist.forEach(s => tokens.add(s))
+    if (safelist) {
+      this.config.safelist.forEach((s) => {
+        // We don't want to increment count if token is already in the set
+        if (!tokens.has(s))
+          tokens.add(s)
+      })
+    }
 
     const nl = minify ? '' : '\n'
 
     const layerSet = new Set<string>([LAYER_DEFAULT])
-    const matched = new Set<string>()
-    const sheet = new Map<string, StringifiedUtil[]>()
+    const matched = extendedInfo
+      ? new Map<string, ExtendedTokenInfo<Theme>>()
+      : new Set<string>()
+
+    const sheet = new Map<string, StringifiedUtil<Theme>[]>()
     let preflightsMap: Record<string, string> = {}
 
     const tokenPromises = Array.from(tokens).map(async (raw) => {
@@ -161,7 +205,15 @@ export class UnoGenerator {
       if (payload == null)
         return
 
-      matched.add(raw)
+      if (matched instanceof Map) {
+        matched.set(raw, {
+          data: payload,
+          count: isCountableSet(tokens) ? tokens.getCount(raw) : -1,
+        })
+      }
+      else {
+        matched.add(raw)
+      }
 
       for (const item of payload) {
         const parent = item[3] || ''
@@ -174,11 +226,12 @@ export class UnoGenerator {
       }
     })
 
-    const preflightPromise = (async () => {
+    await Promise.all(tokenPromises)
+    await (async () => {
       if (!preflights)
         return
 
-      const preflightContext: PreflightContext = {
+      const preflightContext: PreflightContext<Theme> = {
         generator: this,
         theme: this.config.theme,
       }
@@ -206,15 +259,9 @@ export class UnoGenerator {
       )
     })()
 
-    await Promise.all([
-      ...tokenPromises,
-      preflightPromise,
-    ])
-
     const layers = this.config.sortLayers(Array
       .from(layerSet)
-      .sort((a, b) => ((this.config.layers[a] ?? 0) - (this.config.layers[b] ?? 0)) || a.localeCompare(b)),
-    )
+      .sort((a, b) => ((this.config.layers[a] ?? 0) - (this.config.layers[b] ?? 0)) || a.localeCompare(b)))
 
     const layerCache: Record<string, string> = {}
     const getLayer = (layer: string) => {
@@ -227,7 +274,14 @@ export class UnoGenerator {
           const size = items.length
           const sorted: PreparedRule[] = items
             .filter(i => (i[4]?.layer || LAYER_DEFAULT) === layer)
-            .sort((a, b) => a[0] - b[0] || (a[4]?.sort || 0) - (b[4]?.sort || 0) || a[1]?.localeCompare(b[1] || '') || a[2]?.localeCompare(b[2] || '') || 0)
+            .sort((a, b) => {
+              return a[0] - b[0] // rule index
+                || (a[4]?.sort || 0) - (b[4]?.sort || 0) // sort context
+                || a[5]?.currentSelector?.localeCompare(b[5]?.currentSelector ?? '') // shortcuts
+                || a[1]?.localeCompare(b[1] || '') // selector
+                || a[2]?.localeCompare(b[2] || '') // body
+                || 0
+            })
             .map(([, selector, body,, meta,, variantNoMerge]) => {
               const scopedSelector = selector ? applyScope(selector, scope) : selector
               return [
@@ -257,8 +311,7 @@ export class UnoGenerator {
                 ? uniq(selectorSortPair
                   .sort((a, b) => a[1] - b[1] || a[0]?.localeCompare(b[0] || '') || 0)
                   .map(pair => pair[0])
-                  .filter(Boolean),
-                )
+                  .filter(Boolean))
                 : []
 
               return selectors.length
@@ -273,7 +326,7 @@ export class UnoGenerator {
             return rules
 
           const parents = parent.split(' $$ ')
-          return `${parents.join('{')}{${nl}${rules}${nl}}${parents.map(_ => '').join('}')}`
+          return `${parents.join('{')}{${nl}${rules}${nl}${'}'.repeat(parents.length)}`
         })
         .filter(Boolean)
         .join(nl)
@@ -305,29 +358,35 @@ export class UnoGenerator {
     }
   }
 
-  matchVariants(raw: string, current?: string): VariantMatchedResult {
+  async matchVariants(
+    raw: string,
+    current?: string,
+  ): Promise<VariantMatchedResult<Theme>> {
     // process variants
-    const variants = new Set<Variant>()
+    const variants = new Set<Variant<Theme>>()
     const handlers: VariantHandler[] = []
     let processed = current || raw
-    let applied = false
+    let applied = true
 
-    const context: VariantContext = {
+    const context: VariantContext<Theme> = {
       rawSelector: raw,
       theme: this.config.theme,
       generator: this,
     }
 
-    while (true) {
+    while (applied) {
       applied = false
       for (const v of this.config.variants) {
         if (!v.multiPass && variants.has(v))
           continue
-        let handler = v.match(processed, context)
+        let handler = await v.match(processed, context)
         if (!handler)
           continue
-        if (isString(handler))
+        if (isString(handler)) {
+          if (handler === processed)
+            continue
           handler = { matcher: handler }
+        }
         processed = handler.matcher
         handlers.unshift(handler)
         variants.add(v)
@@ -344,25 +403,27 @@ export class UnoGenerator {
     return [raw, processed, handlers, variants]
   }
 
-  private applyVariants(parsed: ParsedUtil, variantHandlers = parsed[4], raw = parsed[1]): UtilObject {
-    const handler = [...variantHandlers]
+  private applyVariants(
+    parsed: ParsedUtil,
+    variantHandlers = parsed[4],
+    raw = parsed[1],
+  ): UtilObject {
+    const handler = variantHandlers.slice()
       .sort((a, b) => (a.order || 0) - (b.order || 0))
-      .reverse()
-      .reduce(
-        (previous, v) =>
-          (input: VariantHandlerContext) => {
-            const entries = v.body?.(input.entries) || input.entries
-            const parents: [string | undefined, number | undefined] = Array.isArray(v.parent) ? v.parent : [v.parent, undefined]
-            return (v.handle ?? defaultVariantHandler)({
-              ...input,
-              entries,
-              selector: v.selector?.(input.selector, entries) || input.selector,
-              parent: parents[0] || input.parent,
-              parentOrder: parents[1] || input.parentOrder,
-              layer: v.layer || input.layer,
-              sort: v.sort || input.sort,
-            }, previous)
-          },
+      .reduceRight(
+        (previous, v) => (input: VariantHandlerContext) => {
+          const entries = v.body?.(input.entries) || input.entries
+          const parents: [string | undefined, number | undefined] = Array.isArray(v.parent) ? v.parent : [v.parent, undefined]
+          return (v.handle ?? defaultVariantHandler)({
+            ...input,
+            entries,
+            selector: v.selector?.(input.selector, entries) || input.selector,
+            parent: parents[0] || input.parent,
+            parentOrder: parents[1] || input.parentOrder,
+            layer: v.layer || input.layer,
+            sort: v.sort || input.sort,
+          }, previous)
+        },
         (input: VariantHandlerContext) => input,
       )
 
@@ -378,11 +439,11 @@ export class UnoGenerator {
       this.parentOrders.set(parent, parentOrder)
 
     const obj: UtilObject = {
-      selector: movePseudoElementsEnd([
+      selector: [
         variantContextResult.prefix,
         variantContextResult.selector,
         variantContextResult.pseudo,
-      ].join('')),
+      ].join(''),
       entries: variantContextResult.entries,
       parent,
       layer: variantContextResult.layer,
@@ -396,7 +457,11 @@ export class UnoGenerator {
     return obj
   }
 
-  constructCustomCSS(context: Readonly<RuleContext>, body: CSSObject | CSSEntries, overrideSelector?: string) {
+  constructCustomCSS(
+    context: Readonly<RuleContext<Theme>>,
+    body: CSSObject | CSSEntries,
+    overrideSelector?: string,
+  ): string {
     const normalizedBody = normalizeCSSEntries(body)
     if (isString(normalizedBody))
       return normalizedBody
@@ -408,9 +473,14 @@ export class UnoGenerator {
     return cssBody
   }
 
-  async parseUtil(input: string | VariantMatchedResult, context: RuleContext, internal = false): Promise<(ParsedUtil | RawUtil)[] | undefined> {
+  async parseUtil(
+    input: string | VariantMatchedResult<Theme>,
+    context: RuleContext<Theme>,
+    internal = false,
+    shortcutPrefix?: string | string[] | undefined,
+  ): Promise<(ParsedUtil | RawUtil)[] | undefined> {
     const [raw, processed, variantHandlers] = isString(input)
-      ? this.matchVariants(input)
+      ? await this.matchVariants(input)
       : input
 
     if (this.config.details)
@@ -446,10 +516,18 @@ export class UnoGenerator {
       // match prefix
       let unprefixed = processed
       if (meta?.prefix) {
-        if (!processed.startsWith(meta.prefix))
-          continue
-
-        unprefixed = processed.slice(meta.prefix.length)
+        const prefixes = toArray(meta.prefix)
+        if (shortcutPrefix) {
+          const shortcutPrefixes = toArray(shortcutPrefix)
+          if (!prefixes.some(i => shortcutPrefixes.includes(i)))
+            continue
+        }
+        else {
+          const prefix = prefixes.find(i => processed.startsWith(i))
+          if (prefix == null)
+            continue
+          unprefixed = processed.slice(prefix.length)
+        }
       }
 
       // match rule
@@ -462,7 +540,7 @@ export class UnoGenerator {
         continue
 
       if (this.config.details)
-        context.rules!.push([matcher, handler, meta] as DynamicRule)
+        context.rules!.push([matcher, handler, meta] as DynamicRule<Theme>)
 
       const entries = normalizeCSSValues(result).filter(i => i.length)
       if (entries.length) {
@@ -476,7 +554,10 @@ export class UnoGenerator {
     }
   }
 
-  stringifyUtil(parsed?: ParsedUtil | RawUtil, context?: RuleContext): StringifiedUtil | undefined {
+  stringifyUtil(
+    parsed?: ParsedUtil | RawUtil,
+    context?: RuleContext<Theme>,
+  ): StringifiedUtil<Theme> | undefined {
     if (!parsed)
       return
     if (isRawUtil(parsed))
@@ -497,12 +578,16 @@ export class UnoGenerator {
     return [parsed[0], selector, body, parent, ruleMeta, this.config.details ? context : undefined, noMerge]
   }
 
-  expandShortcut(input: string, context: RuleContext, depth = 5): [ShortcutValue[], RuleMeta | undefined] | undefined {
+  async expandShortcut(
+    input: string,
+    context: RuleContext<Theme>,
+    depth = 5,
+  ): Promise<[ShortcutValue[], RuleMeta | undefined] | undefined> {
     if (depth === 0)
       return
 
     const recordShortcut = this.config.details
-      ? (s: Shortcut) => {
+      ? (s: Shortcut<Theme>) => {
           context.shortcuts = context.shortcuts ?? []
           context.shortcuts.push(s)
         }
@@ -511,7 +596,14 @@ export class UnoGenerator {
     let meta: RuleMeta | undefined
     let result: string | ShortcutValue[] | undefined
     for (const s of this.config.shortcuts) {
-      const unprefixed = s[2]?.prefix ? input.slice(s[2].prefix.length) : input
+      let unprefixed = input
+      if (s[2]?.prefix) {
+        const prefixes = toArray(s[2].prefix)
+        const prefix = prefixes.find(i => input.startsWith(i))
+        if (prefix == null)
+          continue
+        unprefixed = input.slice(prefix.length)
+      }
       if (isStaticShortcut(s)) {
         if (s[0] === unprefixed) {
           meta = meta || s[2]
@@ -534,15 +626,13 @@ export class UnoGenerator {
 
     // expand nested shortcuts
     if (isString(result))
-      result = expandVariantGroup(result).split(/\s+/g)
+      result = expandVariantGroup(result.trim()).split(/\s+/g)
 
     // expand nested shortcuts with variants
     if (!result) {
-      const [raw, inputWithoutVariant] = isString(input)
-        ? this.matchVariants(input)
-        : input
+      const [raw, inputWithoutVariant] = isString(input) ? await this.matchVariants(input) : input
       if (raw !== inputWithoutVariant) {
-        const expanded = this.expandShortcut(inputWithoutVariant, context, depth - 1)
+        const expanded = await this.expandShortcut(inputWithoutVariant, context, depth - 1)
         if (expanded)
           result = expanded[0].map(item => isString(item) ? raw.replace(inputWithoutVariant, item) : item)
       }
@@ -552,30 +642,34 @@ export class UnoGenerator {
       return
 
     return [
-      result
-        .flatMap(r => (isString(r) ? this.expandShortcut(r, context, depth - 1)?.[0] : undefined) || [r])
+      (await Promise.all(result.map(async r => (
+        isString(r)
+          ? (await this.expandShortcut(r, context, depth - 1))?.[0]
+          : undefined
+      ) || [r])))
+        .flat(1)
         .filter(Boolean),
       meta,
     ]
   }
 
   async stringifyShortcuts(
-    parent: VariantMatchedResult,
-    context: RuleContext,
+    parent: VariantMatchedResult<Theme>,
+    context: RuleContext<Theme>,
     expanded: ShortcutValue[],
     meta: RuleMeta = { layer: this.config.shortcutsLayer },
-  ): Promise<StringifiedUtil[] | undefined> {
+  ): Promise<StringifiedUtil<Theme>[] | undefined> {
     const selectorMap = new TwoKeyMap<string, string | undefined, [[CSSEntries, boolean, number][], number]>()
     const parsed = (
       await Promise.all(uniq(expanded)
         .map(async (i) => {
           const result = isString(i)
             // rule
-            ? await this.parseUtil(i, context, true) as ParsedUtil[]
+            ? await this.parseUtil(i, context, true, meta.prefix) as ParsedUtil[]
             // inline CSS value in shortcut
-            : [[Infinity, '{inline}', normalizeCSSEntries(i), undefined, []] as ParsedUtil]
+            : [[Number.POSITIVE_INFINITY, '{inline}', normalizeCSSEntries(i), undefined, []] as ParsedUtil]
 
-          if (!result)
+          if (!result && this.config.warn)
             warnOnce(`unmatched utility "${i}" in shortcut "${parent[1]}"`)
           return result || []
         })))
@@ -584,10 +678,10 @@ export class UnoGenerator {
       .sort((a, b) => a[0] - b[0])
 
     const [raw, , parentVariants] = parent
-    const rawStringfieldUtil: StringifiedUtil[] = []
+    const rawStringifiedUtil: StringifiedUtil<Theme>[] = []
     for (const item of parsed) {
       if (isRawUtil(item)) {
-        rawStringfieldUtil.push([item[0], undefined, item[1], undefined, item[2], context, undefined])
+        rawStringifiedUtil.push([item[0], undefined, item[1], undefined, item[2], context, undefined])
         continue
       }
       const { selector, entries, parent, sort, noMerge } = this.applyVariants(item, [...item[4], ...parentVariants], raw)
@@ -597,12 +691,12 @@ export class UnoGenerator {
       // add entries
       mapItem[0].push([entries, !!(noMerge ?? item[3]?.noMerge), sort ?? 0])
     }
-    return rawStringfieldUtil.concat(selectorMap
+    return rawStringifiedUtil.concat(selectorMap
       .map(([e, index], selector, joinedParents) => {
-        const stringify = (flatten: boolean, noMerge: boolean, entrySortPair: [CSSEntries, number][]): (StringifiedUtil | undefined)[] => {
+        const stringify = (flatten: boolean, noMerge: boolean, entrySortPair: [CSSEntries, number][]): (StringifiedUtil<Theme> | undefined)[] => {
           const maxSort = Math.max(...entrySortPair.map(e => e[1]))
           const entriesList = entrySortPair.map(e => e[0])
-          return (flatten ? [entriesList.flat(1)] : entriesList).map((entries: CSSEntries): StringifiedUtil | undefined => {
+          return (flatten ? [entriesList.flat(1)] : entriesList).map((entries: CSSEntries): StringifiedUtil<Theme> | undefined => {
             const body = entriesToCss(entries)
             if (body)
               return [index, selector, body, joinedParents, { ...meta, noMerge, sort: maxSort }, context, undefined]
@@ -621,20 +715,22 @@ export class UnoGenerator {
         ])
       })
       .flat(2)
-      .filter(Boolean) as StringifiedUtil[])
+      .filter(Boolean) as StringifiedUtil<Theme>[])
   }
 
-  isBlocked(raw: string) {
-    return !raw || this.config.blocklist.some(e => isString(e) ? e === raw : e.test(raw))
+  isBlocked(raw: string): boolean {
+    return !raw || this.config.blocklist.some(e => typeof e === 'function' ? e(raw) : isString(e) ? e === raw : e.test(raw))
   }
 }
 
-export function createGenerator(config?: UserConfig, defaults?: UserConfigDefaults) {
-  return new UnoGenerator(config, defaults)
+export function createGenerator<Theme extends object = object>(config?: UserConfig<Theme>, defaults?: UserConfigDefaults<Theme>) {
+  return new UnoGenerator<Theme>(config, defaults)
 }
 
-export const regexScopePlaceholder = / \$\$ /
-export const hasScopePlaceholder = (css: string) => css.match(regexScopePlaceholder)
+export const regexScopePlaceholder = /\s\$\$\s+/g
+export function hasScopePlaceholder(css: string) {
+  return regexScopePlaceholder.test(css)
+}
 
 function applyScope(css: string, scope?: string) {
   if (hasScopePlaceholder(css))
@@ -643,17 +739,8 @@ function applyScope(css: string, scope?: string) {
     return scope ? `${scope} ${css}` : css
 }
 
-export function movePseudoElementsEnd(selector: string) {
-  const pseudoElements = selector.match(/::[\w-]+(\([\w-]+\))?/g)
-  if (pseudoElements) {
-    for (const e of pseudoElements)
-      selector = selector.replace(e, '')
-    selector += pseudoElements.join('')
-  }
-  return selector
-}
-
 const attributifyRe = /^\[(.+?)(~?=)"(.*)"\]$/
+
 export function toEscapedSelector(raw: string) {
   if (attributifyRe.test(raw))
     return raw.replace(attributifyRe, (_, n, s, i) => `[${e(n)}${s}"${e(i)}"]`)

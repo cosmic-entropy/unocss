@@ -1,4 +1,4 @@
-export type WebFontsProviders = 'google' | 'bunny' | 'none'
+export type WebFontsProviders = 'google' | 'bunny' | 'fontshare' | 'none' | Provider
 
 export interface WebFontMeta {
   name: string
@@ -9,6 +9,10 @@ export interface WebFontMeta {
    * @default <matches root config>
    */
   provider?: WebFontsProviders
+}
+
+export interface ResolvedWebFontMeta extends Omit<WebFontMeta, 'provider'> {
+  provider: Provider
 }
 
 export interface WebFontsOptions {
@@ -24,7 +28,7 @@ export interface WebFontsOptions {
   fonts?: Record<string, WebFontMeta | string | (WebFontMeta | string)[]>
 
   /**
-   * Extend the theme object
+   * Extend fonts to the theme object
    * @default true
    */
   extendTheme?: boolean
@@ -42,11 +46,18 @@ export interface WebFontsOptions {
    * @default true
    */
   inlineImports?: boolean
+
+  /**
+   * Custom fetch function
+   *
+   * @default undefined
+   */
+  customFetch?: (url: string) => Promise<any>
 }
 
 export interface Provider {
   name: WebFontsProviders
   getPreflight?(fonts: WebFontMeta[]): string
   getImportUrl?(fonts: WebFontMeta[]): string | undefined
-  getFontName(font: WebFontMeta): string
+  getFontName?(font: WebFontMeta): string
 }

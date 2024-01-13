@@ -11,14 +11,14 @@ npm i -D @unocss/transformer-directives
 ```
 
 ```ts
-// uno.config.js
+// uno.config.ts
 import { defineConfig } from 'unocss'
-import transformerDirective from '@unocss/transformer-directives'
+import transformerDirectives from '@unocss/transformer-directives'
 
 export default defineConfig({
   // ...
   transformers: [
-    transformerDirective(),
+    transformerDirectives(),
   ],
 })
 ```
@@ -46,7 +46,7 @@ Will be transformed to:
 
 #### CSS Variable Style
 
-To be compatible with vanilla CSS, you can use CSS Variables to replace the `@apply` directive.
+To be compatible with vanilla CSS, you can use CSS custom properties to replace the `@apply` directive.
 
 ```css
 .custom-div {
@@ -62,13 +62,14 @@ To use rules with `:`, you will need to quote the value
 }
 ```
 
-This feature is enabled by default (with prefix `--at-`), you can configure it or disable it via:
+This feature is enabled by default with a few alias, you can configure or disable it via:
 
 ```js
-transformerDirective({
-  varStyle: '--my-at-',
+transformerDirectives({
+  // the defaults
+  applyVariable: ['--at-apply', '--uno-apply', '--uno'],
   // or disable with:
-  // varStyle: false
+  // applyVariable: false
 })
 ```
 
@@ -78,16 +79,16 @@ The `@screen` directive allows you to create media queries that reference your b
 
 ```css
 .grid {
-  @apply grid grid-cols-2;
+  --uno: grid grid-cols-2;
 }
 @screen xs {
   .grid {
-    @apply grid-cols-1;
+    --uno: grid-cols-1;
   }
 }
 @screen sm {
   .grid {
-    @apply grid-cols-3;
+    --uno: grid-cols-3;
   }
 }
 /* ... */
@@ -121,16 +122,16 @@ Will be transformed to:
 
 ```css
 .grid {
-  @apply grid grid-cols-2;
+  --uno: grid grid-cols-2;
 }
 @screen lt-xs {
   .grid {
-    @apply grid-cols-1;
+    --uno: grid-cols-1;
   }
 }
 @screen lt-sm {
   .grid {
-    @apply grid-cols-3;
+    --uno: grid-cols-3;
   }
 }
 /* ... */
@@ -160,21 +161,21 @@ Will be transformed to:
 
 ```css
 .grid {
-  @apply grid grid-cols-2;
+  --uno: grid grid-cols-2;
 }
 @screen at-xs {
   .grid {
-    @apply grid-cols-1;
+    --uno: grid-cols-1;
   }
 }
 @screen at-xl {
   .grid {
-    @apply grid-cols-3;
+    --uno: grid-cols-3;
   }
 }
 @screen at-xxl {
   .grid {
-    @apply grid-cols-4;
+    --uno: grid-cols-4;
   }
 }
 /* ... */

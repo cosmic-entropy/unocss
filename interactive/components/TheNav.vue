@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { currentTab, isCompact, toggleCompact, uno } from '~/composables/state'
+import { currentTab, isCompact, toggleCompact } from '~/composables/state'
+
+const tab = currentTab
+const info = await searcher.getInfo()
 </script>
 
 <template>
@@ -15,7 +18,7 @@ import { currentTab, isCompact, toggleCompact, uno } from '~/composables/state'
       </h1>
     </RouterLink>
     <div text-xs op-30 ml-2 self-end leading-12px>
-      v{{ uno.version }}
+      v{{ info.version }}
     </div>
     <div flex-auto />
     <div row gap4 text="lg gray4" items-center>
@@ -29,18 +32,20 @@ import { currentTab, isCompact, toggleCompact, uno } from '~/composables/state'
         <button
           class="i-carbon-settings"
           title="Config"
-          @click="currentTab = 'config'"
+          @click="tab = 'config'"
         />
       </template>
       <template v-else>
         <button
           class="i-carbon-close"
           title="Cancel config changes"
-          @click="currentTab = 'search'"
+          @click="tab = 'search'"
         />
       </template>
 
-      <a i-carbon-template href="https://uno.antfu.me/play/" rel="noopener noreferrer" title="Playground" target="_blank" aria-label="Playground" />
+      <a i-carbon-document-multiple-01 href="https://unocss.dev/" rel="noopener noreferrer" title="Documentations" target="_blank" aria-label="Documentations" />
+
+      <a i-carbon-template href="https://unocss.dev/play/" rel="noopener noreferrer" title="Playground" target="_blank" aria-label="Playground" />
 
       <a i-carbon-logo-github href="https://github.com/unocss/unocss" rel="noopener noreferrer" title="GitHub" target="_blank" aria-label="GitHub" />
 

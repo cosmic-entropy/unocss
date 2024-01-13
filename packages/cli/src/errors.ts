@@ -1,4 +1,5 @@
-import consola from 'consola'
+import process from 'node:process'
+import { consola } from 'consola'
 
 export class PrettyError extends Error {
   constructor(message: string) {

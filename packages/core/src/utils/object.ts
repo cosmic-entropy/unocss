@@ -9,7 +9,8 @@ export function normalizeCSSEntries(obj: string | CSSEntries | CSSObject): strin
 
 export function normalizeCSSValues(obj: CSSValue | string | (CSSValue | string)[]): (string | CSSEntries)[] {
   if (Array.isArray(obj)) {
-    // @ts-expect-error type cast
+    // eslint-disable-next-line ts/prefer-ts-expect-error
+    // @ts-ignore type cast
     if (obj.find(i => !Array.isArray(i) || Array.isArray(i[0])))
       return (obj as (string | CSSValue)[]).map(i => normalizeCSSEntries(i))
     else
@@ -47,18 +48,25 @@ export function isObject(item: any): item is Record<string, any> {
   return (item && typeof item === 'object' && !Array.isArray(item))
 }
 
-export function mergeDeep<T>(original: T, patch: DeepPartial<T>): T {
+/**
+ * Deep merge two objects
+ */
+export function mergeDeep<T>(original: T, patch: DeepPartial<T>, mergeArray = false): T {
   const o = original as any
   const p = patch as any
 
-  if (Array.isArray(o))
-    return [...p] as any
+  if (Array.isArray(p)) {
+    if (mergeArray && Array.isArray(p))
+      return [...o, ...p] as any
+    else
+      return [...p] as any
+  }
 
   const output = { ...o }
   if (isObject(o) && isObject(p)) {
     Object.keys(p).forEach((key) => {
       if (((isObject(o[key]) && isObject(p[key])) || (Array.isArray(o[key]) && Array.isArray(p[key]))))
-        output[key] = mergeDeep(o[key], p[key])
+        output[key] = mergeDeep(o[key], p[key], mergeArray)
       else
         Object.assign(output, { [key]: p[key] })
     })
@@ -72,7 +80,7 @@ export function clone<T>(val: T): T {
   if (Array.isArray(val)) {
     out = Array(k = val.length)
     // eslint-disable-next-line no-cond-assign
-    while (k--) out[k] = (tmp = val[k]) && typeof tmp === 'object' ? clone(tmp) : tmp
+    while (k--) out[k] = ((tmp = val[k]) && typeof tmp === 'object') ? clone(tmp) : tmp
     return out as any
   }
 
@@ -89,7 +97,7 @@ export function clone<T>(val: T): T {
       }
       else {
         // eslint-disable-next-line no-cond-assign
-        out[k] = (tmp = (val as any)[k]) && typeof tmp === 'object' ? clone(tmp) : tmp
+        out[k] = ((tmp = (val as any)[k]) && typeof tmp === 'object') ? clone(tmp) : tmp
       }
     }
     return out
@@ -98,10 +106,10 @@ export function clone<T>(val: T): T {
   return val
 }
 
-export function isStaticRule(rule: Rule): rule is StaticRule {
+export function isStaticRule(rule: Rule<any>): rule is StaticRule {
   return isString(rule[0])
 }
 
-export function isStaticShortcut(sc: Shortcut): sc is StaticShortcut {
+export function isStaticShortcut(sc: Shortcut<any>): sc is StaticShortcut {
   return isString(sc[0])
 }

@@ -1,6 +1,6 @@
-import type { Rule } from '@unocss/core'
+import type { Rule, RuleContext } from '@unocss/core'
 import type { Theme } from '../theme'
-import { handler as h, resolveBreakpoints, resolveVerticalBreakpoints } from '../utils'
+import { h, resolveBreakpoints } from '../utils'
 
 const sizeMapping: Record<string, string> = {
   h: 'height',
@@ -32,17 +32,20 @@ function getSizeValue(minmax: string, hw: string, theme: Theme, prop: string) {
 }
 
 export const sizes: Rule<Theme>[] = [
-  [/^(min-|max-)?([wh])-?(.+)$/, ([, m, w, s], { theme }) => ({ [getPropName(m, w)]: getSizeValue(m, w, theme, s) })],
-  [/^(min-|max-)?(block|inline)-(.+)$/, ([, m, w, s], { theme }) => ({ [getPropName(m, w)]: getSizeValue(m, w, theme, s) }), {
+  [/^size-(min-|max-)?(.+)$/, ([, m, s], { theme }) => ({ [getPropName(m, 'w')]: getSizeValue(m, 'w', theme, s), [getPropName(m, 'h')]: getSizeValue(m, 'h', theme, s) })],
+  [/^(?:size-)?(min-|max-)?([wh])-?(.+)$/, ([, m, w, s], { theme }) => ({ [getPropName(m, w)]: getSizeValue(m, w, theme, s) })],
+  [/^(?:size-)?(min-|max-)?(block|inline)-(.+)$/, ([, m, w, s], { theme }) => ({ [getPropName(m, w)]: getSizeValue(m, w, theme, s) }), {
     autocomplete: [
       '(w|h)-$width|height|maxWidth|maxHeight|minWidth|minHeight|inlineSize|blockSize|maxInlineSize|maxBlockSize|minInlineSize|minBlockSize',
       '(block|inline)-$width|height|maxWidth|maxHeight|minWidth|minHeight|inlineSize|blockSize|maxInlineSize|maxBlockSize|minInlineSize|minBlockSize',
       '(max|min)-(w|h|block|inline)',
       '(max|min)-(w|h|block|inline)-$width|height|maxWidth|maxHeight|minWidth|minHeight|inlineSize|blockSize|maxInlineSize|maxBlockSize|minInlineSize|minBlockSize',
+      '(w|h)-full',
+      '(max|min)-(w|h)-full',
     ],
   }],
-  [/^(min-|max-)?(h)-screen-(.+)$/, ([, m, w, s], context) => ({ [getPropName(m, w)]: resolveVerticalBreakpoints(context)?.[s] })],
-  [/^(min-|max-)?(w)-screen-(.+)$/, ([, m, w, s], context) => ({ [getPropName(m, w)]: resolveBreakpoints(context)?.[s] }), {
+  [/^(?:size-)?(min-|max-)?(h)-screen-(.+)$/, ([, m, h, p], context) => ({ [getPropName(m, h)]: handleBreakpoint(context, p, 'verticalBreakpoints') })],
+  [/^(?:size-)?(min-|max-)?(w)-screen-(.+)$/, ([, m, w, p], context) => ({ [getPropName(m, w)]: handleBreakpoint(context, p) }), {
     autocomplete: [
       '(w|h)-screen',
       '(min|max)-(w|h)-screen',
@@ -53,6 +56,12 @@ export const sizes: Rule<Theme>[] = [
     ],
   }],
 ]
+
+function handleBreakpoint(context: Readonly<RuleContext<Theme>>, point: string, key: 'breakpoints' | 'verticalBreakpoints' = 'breakpoints') {
+  const bp = resolveBreakpoints(context, key)
+  if (bp)
+    return bp.find(i => i.point === point)?.size
+}
 
 function getAspectRatio(prop: string) {
   if (/^\d+\/\d+$/.test(prop))
@@ -67,5 +76,5 @@ function getAspectRatio(prop: string) {
 }
 
 export const aspectRatio: Rule[] = [
-  [/^aspect-(?:ratio-)?(.+)$/, ([, d]: string[]) => ({ 'aspect-ratio': getAspectRatio(d) }), { autocomplete: ['aspect-(square|video|ratio)', 'aspect-ratio-(square|video)'] }],
+  [/^(?:size-)?aspect-(?:ratio-)?(.+)$/, ([, d]: string[]) => ({ 'aspect-ratio': getAspectRatio(d) }), { autocomplete: ['aspect-(square|video|ratio)', 'aspect-ratio-(square|video)'] }],
 ]

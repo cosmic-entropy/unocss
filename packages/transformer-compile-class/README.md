@@ -2,7 +2,7 @@
 
 <!-- @unocss-ignore -->
 
-Compile group of classes into one class. Inspried by [WindiCSS's compilation mode](https://windicss.org/posts/modes.html#compilation-mode) and [#948](https://github.com/unocss/unocss/issues/948) by [@UltraCakeBakery](https://github.com/UltraCakeBakery).
+Compile group of classes into one class. Inspired by [WindiCSS's compilation mode](https://windicss.org/posts/modes.html#compilation-mode) and [#948](https://github.com/unocss/unocss/issues/948) by [@UltraCakeBakery](https://github.com/UltraCakeBakery).
 
 ## Install
 
@@ -11,7 +11,7 @@ npm i -D @unocss/transformer-compile-class
 ```
 
 ```ts
-// uno.config.js
+// uno.config.ts
 import { defineConfig } from 'unocss'
 import transformerCompileClass from '@unocss/transformer-compile-class'
 
@@ -52,7 +52,7 @@ Will be compiled to:
 }
 .uno-0qw2gr:hover {
   --un-text-opacity: 1;
-  color: rgba(248, 113, 113, var(--un-text-opacity));
+  color: rgb(248 113 113 / var(--un-text-opacity));
 }
 @media (min-width: 640px) {
   .uno-qlmcrp {
@@ -63,7 +63,7 @@ Will be compiled to:
 
 ## Options
 
-You can config the trigger string and prefix for compile class with the options. Refers to [the types](https://github.com/antfu/unocss/blob/main/packages/transformer-compile-class/src/index.ts#L4) for details.
+You can config the trigger string and prefix for compile class with the options. Refers to [the types](https://github.com/unocss/unocss/blob/main/packages/transformer-compile-class/src/index.ts#L4) for details.
 
 ## License
 

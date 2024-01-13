@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Fragment, h } from 'preact'
 import { useState } from 'preact/compat'
 
 export function App() {
@@ -16,7 +14,9 @@ export function App() {
               type="button"
               onClick={() => setCount(count => count + 1)}
             >
-                    count is: {count}
+              count is:
+              {' '}
+              {count}
             </button>
 
             <button
@@ -29,7 +29,9 @@ export function App() {
               type="button"
               onClick={() => setCount(count => count + 1)}
             >
-                    count is: {count}
+              count is:
+              {' '}
+              {count}
             </button>
 
           </p>
@@ -40,7 +42,7 @@ export function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-          Learn Preact
+              Learn Preact
             </a>
           </p>
         </header>

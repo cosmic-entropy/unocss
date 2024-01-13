@@ -1,10 +1,15 @@
 import { createGenerator } from '@unocss/core'
-import presetAttributify from '@unocss/preset-attributify'
+import presetAttributify, { type AttributifyOptions } from '@unocss/preset-attributify'
 import { presetUno } from '@unocss/preset-uno'
-import { presetTypography } from '@unocss/preset-typography'
-import { describe, expect, test } from 'vitest'
+import { type TypographyOptions, presetTypography } from '@unocss/preset-typography'
+import { describe, expect, it } from 'vitest'
 
-const testConfigs = [
+const testConfigs: {
+  name: string
+  input: string
+  typographyOptions: TypographyOptions
+  attributifyOptions?: AttributifyOptions
+}[] = [
   // prose test
   {
     name: 'prose-class',
@@ -52,6 +57,29 @@ const testConfigs = [
     },
   },
 
+  // custom css test with function
+  {
+    name: 'prose-custom-css-function',
+    input: 'prose',
+    typographyOptions: {
+      cssExtend: (theme) => {
+        const purple = theme.colors?.purple as Record<string, string>
+        return {
+          'code': {
+            'color': purple['600'],
+            'font-family': theme.fontFamily?.sans,
+          },
+          'a:hover': {
+            color: purple['500'],
+          },
+          'a:visited': {
+            color: purple['400'],
+          },
+        }
+      },
+    },
+  },
+
   // black
   {
     name: 'prose-black',
@@ -76,15 +104,33 @@ const testConfigs = [
       strict: false,
     },
   },
+
+  {
+    name: 'prose-compatibility-no-colon-is',
+    input: '<a prose class="prose"></a>',
+    typographyOptions: { compatibility: { noColonIs: true } },
+  },
+
+  {
+    name: 'prose-compatibility-no-colon-where',
+    input: '<a prose class="prose"></a>',
+    typographyOptions: { compatibility: { noColonWhere: true } },
+  },
+
+  {
+    name: 'prose-compatibility-no-colon-not',
+    input: '<a prose class="prose"></a>',
+    typographyOptions: { compatibility: { noColonNot: true } },
+  },
 ]
 
 describe('typography', () => {
   for (const tc of testConfigs) {
-    test(tc.name, async () => {
+    it(tc.name, async () => {
       const generator = createGenerator({
         presets: [
           presetAttributify(tc.attributifyOptions),
-          presetUno(),
+          presetUno({ preflight: false }),
           presetTypography(tc.typographyOptions),
         ],
       })

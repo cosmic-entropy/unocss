@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeRouteUpdate } from 'vue-router'
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+
+// eslint-disable-next-line ts/consistent-type-imports
 import type { ResultItem } from '~/types'
 import { input, isSearching, searchResult, selectIndex, userConfigLoading } from '~/composables/state'
 
@@ -13,13 +14,12 @@ const vFocus = {
 
 watch(
   () => route.query.s,
-  async () => {
-    input.value = String(route.query.s || '')
-    await excuteSearch()
+  async (val) => {
+    input.value = String(val || '')
   },
 )
 
-async function excuteSearch() {
+async function executeSearch() {
   if (input.value)
     isSearching.value = true
   try {
@@ -43,10 +43,10 @@ async function excuteSearch() {
   })
 }
 
-throttledWatch(
+watchDebounced(
   input,
-  excuteSearch,
-  { throttle: 100, immediate: true },
+  executeSearch,
+  { debounce: 200, immediate: true },
 )
 
 useEventListener('keydown', (e) => {
@@ -88,11 +88,11 @@ function clear() {
   nextTick().then(() => inputEl?.focus())
 }
 
-function openItem(item: ResultItem) {
+async function openItem(item: ResultItem) {
   if (isMobile.value && !isModalOpen.value)
     isModalOpen.value = true
   else
-    input.value = searcher.getItemId(item)
+    input.value = await searcher.getItemId(item)
 }
 
 function selectItem(item: ResultItem) {

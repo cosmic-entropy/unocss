@@ -11,7 +11,7 @@ npm i -D @unocss/transformer-variant-group
 ```
 
 ```ts
-// uno.config.js
+// uno.config.ts
 import { defineConfig } from 'unocss'
 import transformerVariantGroup from '@unocss/transformer-variant-group'
 
@@ -33,7 +33,7 @@ Will be transformed to:
 
 ```html
 <div class="hover:bg-gray-400 hover:font-medium font-light font-mono"/>
-``` 
+```
 
 ## License
 

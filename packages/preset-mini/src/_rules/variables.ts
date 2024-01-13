@@ -1,5 +1,5 @@
 import type { Rule } from '@unocss/core'
-import { handler as h } from '../utils'
+import { h, hasThemeFn, transformThemeFn } from '../utils'
 
 const variablesAbbrMap: Record<string, string> = {
   backface: 'backface-visibility',
@@ -26,5 +26,66 @@ export const cssVariables: Rule[] = [
 ]
 
 export const cssProperty: Rule[] = [
-  [/^\[([\w_-]+):([^'"]+)\]$/, ([, prop, value]) => ({ [prop]: h.bracket(`[${value}]`) })],
+  [/^\[(.*)\]$/, ([_, body], { theme }) => {
+    if (!body.includes(':'))
+      return
+
+    const [prop, ...rest] = body.split(':')
+    const value = rest.join(':')
+
+    if (!isURI(body) && /^[a-z-]+$/.test(prop) && isValidCSSBody(value)) {
+      let parsed
+
+      if (hasThemeFn(value))
+        parsed = transformThemeFn(value, theme)
+
+      if (!parsed || parsed === value)
+        parsed = h.bracket(`[${value}]`)
+
+      if (parsed)
+        return { [prop]: parsed }
+    }
+  }],
 ]
+
+function isValidCSSBody(body: string) {
+  let i = 0
+  function findUntil(c: string) {
+    while (i < body.length) {
+      i += 1
+      const char = body[i]
+      if (char === c)
+        return true
+    }
+    return false
+  }
+
+  for (i = 0; i < body.length; i++) {
+    const c = body[i]
+    if ('"`\''.includes(c)) {
+      if (!findUntil(c))
+        return false
+    }
+    else if (c === '(') {
+      if (!findUntil(')'))
+        return false
+    }
+    else if ('[]{}:'.includes(c)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function isURI(declaration: string) {
+  if (!declaration.includes('://'))
+    return false
+
+  try {
+    return new URL(declaration).host !== ''
+  }
+  catch (err) {
+    return false
+  }
+}

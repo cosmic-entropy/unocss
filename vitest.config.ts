@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defaultExclude, defineConfig } from 'vitest/config'
 import { alias } from './alias'
 
 export default defineConfig({
@@ -9,6 +9,9 @@ export default defineConfig({
     alias,
   },
   test: {
+    testTimeout: 30_000,
+    name: 'unit',
     setupFiles: ['./test/setup.ts'],
+    exclude: [...defaultExclude, '**/svelte-scoped/**'],
   },
 })

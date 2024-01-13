@@ -1,6 +1,6 @@
 import { createGenerator, escapeSelector } from '@unocss/core'
 import presetWind from '@unocss/preset-wind'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { presetWindNonTargets, presetWindTargets } from './assets/preset-wind-targets'
 
 const uno = createGenerator({
@@ -16,11 +16,24 @@ const uno = createGenerator({
         b: 'rgba(var(--custom), %alpha)',
       },
     },
+    data: {
+      dropdown: 'data-bs-toggle="dropdown"',
+    },
+    container: {
+      center: true,
+      padding: {
+        'DEFAULT': '1rem',
+        'sm': '2rem',
+        'lg': '4rem',
+        'xl': '5rem',
+        '2xl': '6rem',
+      },
+    },
   },
 })
 
 describe('preset-wind', () => {
-  test('targets', async () => {
+  it('targets', async () => {
     const targets = presetWindTargets
     const code = targets.join(' ')
     const { css } = await uno.generate(code)
@@ -32,17 +45,17 @@ describe('preset-wind', () => {
         unmatched.push(i)
     }
     expect(unmatched).toEqual([])
-    expect(css).toMatchSnapshot()
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-wind-targets.css')
     expect(css).toEqual(css2)
   })
 
-  test('non-targets', async () => {
+  it('non-targets', async () => {
     const { matched } = await uno.generate(new Set(presetWindNonTargets), { preflights: false })
 
     expect([...matched]).toEqual([])
   })
 
-  test('containers', async () => {
+  it('containers', async () => {
     const targets = [
       'container',
       'md:container',
@@ -54,10 +67,10 @@ describe('preset-wind', () => {
     const { css, matched } = await uno.generate(new Set([...targets, ...nonTargets]), { preflights: false })
 
     expect(matched).toEqual(new Set(targets))
-    expect(css).toMatchSnapshot()
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-wind-containers.css')
   })
 
-  test('centered containers', async () => {
+  it('centered containers', async () => {
     const uno = createGenerator({
       presets: [
         presetWind(),
@@ -77,6 +90,72 @@ describe('preset-wind', () => {
     const { css, matched } = await uno.generate(new Set(targets), { preflights: false })
 
     expect(matched).toEqual(new Set(targets))
-    expect(css).toMatchSnapshot()
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-wind-containers-centered.css')
   })
+
+  it('containers with max width', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetWind(),
+      ],
+      theme: {
+        container: {
+          maxWidth: {
+            sm: '540px',
+            md: '720px',
+            lg: '960px',
+            xl: '1140px',
+            xxl: '1320px',
+          },
+        },
+      },
+    })
+
+    const targets = [
+      'container',
+      'md:container',
+      'lg:container',
+    ]
+
+    const { css, matched } = await uno.generate(new Set(targets), { preflights: false })
+
+    expect(matched).toEqual(new Set(targets))
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-wind-containers-max-width.css')
+  })
+
+  it('custom var prefix', async () => {
+    const uno = createGenerator({
+      presets: [
+        presetWind({
+          variablePrefix: 'hi-',
+        }),
+      ],
+    })
+
+    const { css } = await uno.generate([
+      'text-opacity-50',
+      'text-red',
+      'scale-100',
+    ].join(' '), { preflights: false })
+
+    await expect(css).toMatchFileSnapshot('./assets/output/preset-wind-custom-var-prefix.css')
+  })
+})
+
+it('empty prefix', async () => {
+  const uno = createGenerator({
+    presets: [
+      presetWind({
+        variablePrefix: '',
+      }),
+    ],
+  })
+
+  const { css } = await uno.generate([
+    'text-opacity-50',
+    'text-red',
+    'scale-100',
+  ].join(' '), { preflights: false })
+
+  await expect(css).toMatchFileSnapshot('./assets/output/preset-wind-empty-var-prefix.css')
 })

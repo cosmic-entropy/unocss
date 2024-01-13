@@ -1,11 +1,15 @@
 import type { Rule } from '@unocss/core'
 import type { Theme } from '../theme'
-import { handler as h } from '../utils'
+import { h } from '../utils'
 
-const rowCol = (s: string) => s.replace('col', 'column')
-const rowColTheme = (s: string) => s[0] === 'r' ? 'Row' : 'Column'
+function rowCol(s: string) {
+  return s.replace('col', 'column')
+}
+function rowColTheme(s: string) {
+  return s[0] === 'r' ? 'Row' : 'Column'
+}
 
-const autoDirection = (c: string, theme: Theme, prop: string) => {
+function autoDirection(c: string, theme: Theme, prop: string) {
   const v = theme[`gridAuto${rowColTheme(c)}`]?.[prop]
   if (v != null)
     return v
@@ -57,7 +61,18 @@ export const grids: Rule<Theme>[] = [
   [/^grid-(rows|cols)-minmax-([\w.-]+)$/, ([, c, d]) => ({ [`grid-template-${rowCol(c)}`]: `repeat(auto-fill,minmax(${d},1fr))` })],
   [/^grid-(rows|cols)-(\d+)$/, ([, c, d]) => ({ [`grid-template-${rowCol(c)}`]: `repeat(${d},minmax(0,1fr))` }), { autocomplete: ['grid-(rows|cols)-<num>', 'grid-(rows|cols)-none'] }],
 
+  // areas
+  [/^grid-area(s)?-(.+)$/, ([, s, v]) => {
+    if (s != null)
+      return { 'grid-template-areas': h.cssvar(v) ?? v.split('-').map(s => `"${h.bracket(s)}"`).join(' ') }
+    return { 'grid-area': h.bracket.cssvar(v) }
+  }],
+
   // template none
   ['grid-rows-none', { 'grid-template-rows': 'none' }],
   ['grid-cols-none', { 'grid-template-columns': 'none' }],
+
+  // template subgrid
+  ['grid-rows-subgrid', { 'grid-template-rows': 'subgrid' }],
+  ['grid-cols-subgrid', { 'grid-template-columns': 'subgrid' }],
 ]

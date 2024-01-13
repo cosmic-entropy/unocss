@@ -1,6 +1,6 @@
-import type { Preset } from '@unocss/core'
+import { definePreset } from '@unocss/core'
 
-const remRE = /^-?[\.\d]+rem$/
+const remRE = /(-?[\.\d]+)rem/g
 
 export interface RemToPxOptions {
   /**
@@ -10,7 +10,7 @@ export interface RemToPxOptions {
   baseFontSize?: number
 }
 
-export default function remToPxPreset(options: RemToPxOptions = {}): Preset {
+export const presetRemToPx = definePreset((options: RemToPxOptions = {}) => {
   const {
     baseFontSize = 16,
   } = options
@@ -20,9 +20,11 @@ export default function remToPxPreset(options: RemToPxOptions = {}): Preset {
     postprocess: (util) => {
       util.entries.forEach((i) => {
         const value = i[1]
-        if (value && typeof value === 'string' && remRE.test(value))
-          i[1] = `${+value.slice(0, -3) * baseFontSize}px`
+        if (typeof value === 'string' && remRE.test(value))
+          i[1] = value.replace(remRE, (_, p1) => `${p1 * baseFontSize}px`)
       })
     },
   }
-}
+})
+
+export default presetRemToPx

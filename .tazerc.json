@@ -5,9 +5,15 @@
     "@types/vscode",
     "codemirror",
     "@vue/cli-plugin-babel",
-    "@vue/cli-service"
+    "@vue/cli-service",
+    "msw",
+    "prettier",
+    "prettier-plugin-svelte",
+    "@types/prettier"
   ],
   "packageMode": {
-    "vue": "minor"
+    "vue": "minor",
+    "nuxt": "minor",
+    "lit": "minor"
   }
 }

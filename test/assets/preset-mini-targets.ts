@@ -36,9 +36,11 @@ export const presetMiniTargets: string[] = [
   'outline-110',
   'outline-blue-2',
   'outline-[var(--red)]',
+  'outline-[calc(1rem-1px)]',
   'outline-size-[var(--width)]',
   'outline-offset-[var(--offset)]',
   'appearance-none',
+  'appearance-auto',
   'will-change-margin,padding',
   'will-change-padding,margin',
   'will-change-transform',
@@ -66,9 +68,13 @@ export const presetMiniTargets: string[] = [
   'border-x-size-2',
   'border-t-size-2',
   'border-width-3',
+  'border-width-[2em]',
+  'border-width-[calc(1em-1px)]',
   'border-size-unset',
   'border-x-width-3',
   'border-t-width-3',
+  'border-[calc(var(--border-width)*1px)]',
+  'border-[calc(10px+1px)]',
   'rounded-[4px]',
   'rounded-1/2',
   'rounded-full',
@@ -82,6 +88,25 @@ export const presetMiniTargets: string[] = [
   'rounded-ie-be-1/2',
   'rounded-bs-sm',
   'rounded-bs-ie',
+  'mt-6',
+  'mx-1',
+  'ms-4',
+  'me-8',
+  'pt-6',
+  'px-1',
+  'ps-4',
+  'pe-8',
+  'start-4',
+  'end-8',
+  'border-s-0',
+  'border-e-4',
+  'border-black',
+  'border-s-green-500',
+  'border-e-red-400',
+  'rounded-s',
+  'rounded-e',
+  'rounded-ss',
+  'rounded-es',
   'rounded',
   'rounded-none',
   'border-rounded',
@@ -114,8 +139,6 @@ export const presetMiniTargets: string[] = [
 
   // border - color
   'border-[#124]',
-  'border-[2em]',
-  'border-[calc(1em-1px)]',
   'border-black/10',
   'border-blue',
   'border-red-100',
@@ -126,9 +149,11 @@ export const presetMiniTargets: string[] = [
   'border-[var(--color)]',
   'border-green-100/20',
   'border-opacity-20',
+  'border-opacity-$opacity-variable',
   'border-y-red',
   'border-y-op-30',
   'border-x-[rgb(1,2,3)]/[0.5]',
+  'border-x-[rgb(4_5_6)]/[0.5]',
   'border-t-[#124]',
   'border-t-black/10',
   'border-b-blue',
@@ -170,6 +195,7 @@ export const presetMiniTargets: string[] = [
   'c-$color-variable',
   'c-$color-variable/10',
   'c-$color-variable/$opacity-variable',
+  'c-$color-variable,red',
   'op-10',
   'opacity-0',
   'opacity-$opa',
@@ -185,6 +211,10 @@ export const presetMiniTargets: string[] = [
   'color-blue-gray/10',
   'color-bluegray-400/10',
   'color-bluegray/10',
+  'color-inherit',
+  'color-initial',
+  'text-inherit',
+  'text-revert',
   'text-black/10',
   'text-rose',
   'text-red-100',
@@ -195,22 +225,37 @@ export const presetMiniTargets: string[] = [
   'text-red100',
   'text-red2',
   'text-opacity-[13.3333333%]',
+  'text-opacity-$opacity-variable',
+  'text-[--variable]',
   'text-[var(--color)]',
   'text-[#124]',
   'text-[2em]',
   'text-[100px]',
   'text-[calc(1em-1px)]',
+  'text-[length:--variable]',
   'text-[length:var(--size)]',
   'text-[length:2em]',
   'text-[length:calc(1em-1px)]',
+  'text-[color:--variable]',
   'text-[color:var(--color)]',
   'text-[color:var(--color-x)]:[trick]',
+  'text-sm/3',
+  'text-sm/[10px]',
+  'text-[11px]/4',
+  'text-[12px]/[13px]',
+  'text-[length:var(--size)]:$leading',
+  'text-[calc(1rem-1px)]',
+  'text-size-1em',
+  'font-size-1.5rem',
 
   // color - bg
   'bg-[#153]/10',
   'bg-[#1533]',
   'bg-[#1533]/10',
   'bg-[rgba(1,2,3,0.5)]',
+  'bg-[rgba(4_5_6/0.7)]',
+  'bg-[rgba(4_5_6/0.7)]/80',
+  'bg-[rgb(4_5_6/0.7)]/[calc(100/3)]',
   'bg-#452233/40',
   'bg-red-100',
   'bg-teal-100/55',
@@ -220,6 +265,22 @@ export const presetMiniTargets: string[] = [
   'bg-teal-500/[55%]',
   'bg-hex-452233/40',
   'bg-opacity-45',
+  'bg-opacity-[--opacity-variable]',
+  'bg-opacity-$opacity-variable',
+  'bg-[10px]',
+  'bg-[10%]',
+  'bg-[10vw]',
+  'bg-[calc(10%+10px)]',
+  'bg-[calc(10vw+10px)]',
+  'bg-[url(https://test.unocss.png)]',
+  'bg-[length:--variable]',
+  'bg-[length:10_20rem]',
+  'bg-[length:1/2_20rem]',
+  'bg-[position:--variable]',
+  'bg-[position:10_20rem]',
+  'bg-[position:1/2_20rem]',
+  'bg-[position:bottom_left_10%]',
+  'bg-[position:top_right_1/3]',
 
   // color - ring
   'ring-red2',
@@ -228,9 +289,11 @@ export const presetMiniTargets: string[] = [
   'ring-width-px',
   'ring-size-px',
   'ring-op-5',
+  'ring-op-$opacity-variable',
   'ring-offset-red2',
   'ring-offset-red2/5',
   'ring-offset-op-5',
+  'ring-offset-op-$opacity-variable',
 
   // decoration
   'decoration-none',
@@ -242,13 +305,16 @@ export const presetMiniTargets: string[] = [
   'decoration-offset-none',
   'decoration-underline',
   'decoration-size-unset',
+  'decoration-[calc(1rem-1px)]',
   'underline',
   'underline-dashed',
   'underline-red-500',
   'underline-op80',
+  'underline-op-$opacity-variable',
   'underline-auto',
   'underline-inherit',
   'underline-5',
+  'underline-[calc(1rem-1px)]',
   'underline-1rem',
   'underline-offset-auto',
   'underline-offset-4',
@@ -286,10 +352,14 @@ export const presetMiniTargets: string[] = [
   'gap-inherit',
   'gap-4',
   'gap-x-1',
+  'gap-col-1',
   'gap2',
   'flex-gap-y-1',
+  'flex-gap-row-1',
   'flex-gap-y-unset',
+  'flex-gap-row-unset',
   'grid-gap-y-1',
+  'grid-gap-row-1',
 
   // grid
   'grid-cols-$1',
@@ -315,6 +385,13 @@ export const presetMiniTargets: string[] = [
   'grid-rows-minmax-100px',
   'grid-flow-dense',
   'grid-flow-col-dense',
+  'grid-area-[content]',
+  'grid-area-$variable',
+  'grid-areas-[prepend_content_append]',
+  'grid-areas-[prepend_content_append]-[prepend_content_append]',
+  'grid-areas-$variable',
+  'grid-cols-subgrid',
+  'grid-rows-subgrid',
 
   // layout
   'of-y-visible',
@@ -383,15 +460,19 @@ export const presetMiniTargets: string[] = [
   'clear-both',
   'clear-none',
   'clear-revert',
+  'box-content',
+  'box-border',
+  'box-inherit',
+
+  // position - z-index
   'z0',
   'z-0',
   'z-1',
   'z-100',
   'z-auto',
   'z-inherit',
-  'box-content',
-  'box-border',
-  'box-inherit',
+  'pos-z--1',
+  'position-z-auto',
 
   // ring, shadow
   'ring',
@@ -402,6 +483,7 @@ export const presetMiniTargets: string[] = [
   'ring-offset-4',
   'ring-offset-green5',
   'ring-inset',
+  'ring-[calc(1rem-1px)]',
   'shadow',
   'shadow-transparent',
   'shadow-current',
@@ -409,9 +491,12 @@ export const presetMiniTargets: string[] = [
   'shadow-xl',
   'shadow-green-500',
   'shadow-green-900/50',
+  'shadow-[#fff]',
   'shadow-op-50',
+  'shadow-op-$opacity-variable',
   'shadow-inset',
   'shadow-[0px_4px_4px_0px_rgba(237,_0,_0,_1)]',
+  'shadow-[0px_4px_4px_0px_rgba(238_0_0/1)]',
   'shadow-$variable',
 
   // size
@@ -449,7 +534,7 @@ export const presetMiniTargets: string[] = [
   'w-21',
   'w-1/4',
   'w-lg',
-  'w-1cqw',
+  'w-1in',
   'h-screen-sm',
   'h-screen-lg',
   'max-h-[1px]',
@@ -473,6 +558,17 @@ export const presetMiniTargets: string[] = [
   'h-$var',
   'h-[calc(1000px-4rem)]',
   'w-[calc(calc(100px*10)-4rem)]',
+  'w-[calc(1-var(--something)*0.5)]',
+  'w-[calc(1-(var(--something)*0.5))]',
+  'w-[calc(1-((12-3)*0.5))]',
+  'size-w-10',
+  'size-h-[calc(1000px-4rem)]',
+  'size-min-w-full',
+  'size-10',
+  'size-[calc(1000px-4rem)]',
+  'size-[var(--something)]',
+  'size-min-10',
+  'size-max-10',
 
   // size - logical
   'block-auto',
@@ -539,6 +635,7 @@ export const presetMiniTargets: string[] = [
   'mt-$height',
   'my-auto',
   'my-revert-layer',
+  'my-[var(--hello-space-y)]',
   'm-none',
 
   // spacing - logical
@@ -595,10 +692,18 @@ export const presetMiniTargets: string[] = [
   'whitespace-unset',
   'ws-nowrap',
   'ws-revert',
+  'contain-layout',
+  'contain-[size_layout]',
+  'contain-[size_layout_paint]',
 
   'break-normal',
   'break-words',
+  'break-keep',
   'text-clip',
+  'text-wrap',
+  'text-nowrap',
+  'text-balance',
+  'text-pretty',
   'case-upper', // !
   'case-normal', // !
   'case-inherit', // !
@@ -609,10 +714,14 @@ export const presetMiniTargets: string[] = [
   // content
   'content-empty',
   'content-none',
-  'content-[!]',
-  'content-[unocss]',
-  'content-[attr(dashed-attr)]',
-  'content-[attr(underlined_attr)]',
+  'content-[normal]',
+  'content-[quoted:!]',
+  'content-[quoted:unocss]',
+  'content-[\'quoted1\']',
+  'content-[\'quoted_with_space\']',
+  'content-["quoted2"]',
+  'content-[string:attr(dashed-attr)]',
+  'content-[string:attr(underlined\\_attr)]',
   'content-$unocss-var',
 
   // content visibility
@@ -630,14 +739,16 @@ export const presetMiniTargets: string[] = [
   'fill-current',
   'fill-green-400',
   'fill-opacity-80',
+  'fill-opacity-$opacity-variable',
   'fill-[#123]',
-  'fill-[1rem]',
   'stroke-none',
   'stroke-current',
   'stroke-green-400',
   'stroke-opacity-80',
+  'stroke-opacity-$opacity-variable',
   'stroke-[#123]',
   'stroke-[1rem]',
+  'stroke-[calc(1rem-1px)]',
   'stroke-size-none',
   'stroke-size-1',
   'stroke-size-1px',
@@ -676,6 +787,7 @@ export const presetMiniTargets: string[] = [
   'transform-rotate-y-1',
   'transform-rotate-z-[var(--spin)]',
   'rotate-z-[var(--spin)]',
+  'skew-10',
   'skew-x-10',
   'skew-x-10deg',
   'skew-x-10.00deg',
@@ -728,6 +840,7 @@ export const presetMiniTargets: string[] = [
   // typography
   'font-mono',
   'font-[system-ui]',
+  'font-550',
   'font-$font-name',
   'text-4xl',
   'text-base',
@@ -745,6 +858,8 @@ export const presetMiniTargets: string[] = [
   'font-synthesis-$synth',
   'font-synthesis-inherit',
   'font-inherit',
+  'font-["custom_fontFamily_name"]',
+  'fw-inherit',
   'fw-900',
   'fw-050',
   'fw-50',
@@ -754,6 +869,7 @@ export const presetMiniTargets: string[] = [
   'leading-inherit',
   'font-leading-2',
   'lh-[1.5]',
+  'line-height-[1.5]',
   'tracking-wide',
   'tracking-[2/5]',
   'tracking-inherit',
@@ -774,14 +890,21 @@ export const presetMiniTargets: string[] = [
   'text-stroke-sm',
   'text-stroke-blue-500',
   'text-stroke-op-60',
+  'text-stroke-op-$opacity-variable',
   'text-shadow',
   'text-shadow-lg',
   'text-shadow-none',
   'text-shadow-$var',
   'text-shadow-color-red-300',
   'text-shadow-color-op-30',
+  'text-shadow-color-op-$opacity-variable',
+
+  // misc
+  'color-scheme-light',
+  'color-scheme-dark',
 
   // variables
+  'bg-[--test-variable]',
   'bg-$test-variable',
   'border-$color',
   'border-t-$color',
@@ -840,6 +963,17 @@ export const presetMiniTargets: string[] = [
   '[content:attr(attr_content)]',
   '[content:attr(attr\\_content)]',
   '[background-image:url(star_transparent.gif),_url(cat_front.png)]',
+  '[font-family:var(--font-family)]',
+  '[font-family:\'Inter\',_sans-serif]',
+  '[font-feature-settings:\'cv02\',\'cv03\',\'cv04\',\'cv11\']',
+  '[font-variation-settings:"wght"_400,_"opsz"_14]',
+  '[padding:theme(spacing.xl)]',
+  '[color:theme(colors.blue.300/40%)]',
+  '[--css-variable:"wght"_400,_"opsz"_14]',
+  '[--css-variable-color:theme(colors.red.500)]',
+  '[--css-variable-color:theme(colors.red.500/50%)]',
+  '[--css-variable-color:theme(colors.green.500),theme(colors.blue.500)]',
+  '[--css-spacing:theme(spacing.sm)]',
 
   // variants
   'active:scale-4',
@@ -850,16 +984,20 @@ export const presetMiniTargets: string[] = [
   'at-2xl:m2',
   'at-lg:m2',
   'at-sm:m1',
+  '~sm:m1',
   'disabled:op50',
   'first:p-2',
   'first-line:bg-green-400',
   'first-letter:bg-green-400',
   'group-hover:group-focus:text-center',
+  'focus-visible:outline-none',
   'hover:!p-1',
   'hover:not-first:checked:bg-red/10',
   'hover:p-5',
   'lt-lg:m2',
   'lt-sm:m1',
+  'max-sm:m1',
+  '<sm:m1',
   'md:!hidden',
   'md:m-1',
   'not-hover:p-3',
@@ -869,20 +1007,21 @@ export const presetMiniTargets: string[] = [
   'important:p-3',
   'sm:important:p-3',
   'p3!',
+  '-mt-safe',
+  '-!mb-safe',
+  '!-ms-safe',
 
   // variants class
   'all-[.target]-[combinator:test-2]',
   'children-[.target]-[combinator:test-2]',
   'next-[.target]-[combinator:test-2]',
-  'group-[.scope]-[combinator:test-3]',
-  'parent-[.scope]-[combinator:test-3]',
-  'previous-[.scope]-[combinator:test-3]',
   'sibling-[div:hover]-[combinator:test-4]',
-  'group-[div:hover]-[combinator:test-4]',
   'all-[svg]:fill-red',
+  'all-[[data-hvr]:hover]:[color:red]',
 
   // variants combinators
   'all:m-auto',
+  'all:m1/1',
   'children:m-auto',
   'next:mt-0',
 
@@ -895,7 +1034,8 @@ export const presetMiniTargets: string[] = [
   'uno-layer-1:translate-0',
   'uno-layer-uno_css:block',
   'layer-base:translate-0',
-  'layer-utility:block',
+  'layer-[utility]:block',
+  'uno-layer-[uno_css]:block',
 
   // variants misc
   '-rotate-2',
@@ -906,12 +1046,19 @@ export const presetMiniTargets: string[] = [
   '!m-$c-m',
   '!p-5px',
   '-gap-y-5',
+  '-gap-row-5',
   '-mb-px',
+  '-mt--5cm',
   '-p-px',
   '-z-1',
 
+  // variants supports
+  'supports-[(display:_grid)]:block',
+
   // variants media
-  'media-cssvar:block',
+  'media-mouse:block',
+  'media-[(--cssvar)]:block',
+  'group-hover:media-mouse:bg-red',
 
   // variants prints
   'print:block',
@@ -919,7 +1066,7 @@ export const presetMiniTargets: string[] = [
 
   // variants - pseudo elements
   'before:translate-y-full',
-  'after:content-[unocss]',
+  'after:content-[quoted:unocss]',
   'placeholder-opacity-60',
   'placeholder-color-opacity-60',
   'placeholder-color-red-1',
@@ -929,6 +1076,7 @@ export const presetMiniTargets: string[] = [
   'file:bg-violet-50',
   'hover:file:bg-violet-100',
   'backdrop:shadow-green',
+  'backdrop-element:shadow-green-100',
 
   // variants - pseudo classes
   'rtl:text-right',
@@ -952,15 +1100,33 @@ export const presetMiniTargets: string[] = [
   'group-has-placeholder-shown:text-4xl',
   'focus-within:has-first:checked:bg-gray/20',
 
+  // variants - pseudo function with custom value
+  'has-[:hover]:m-1',
+  'group-not-[[data-potato]]:m-1',
+  'previous-is-[div]:m-1',
+  'peer-where-[.child]:m-1',
+  'parent-not-[#someId]:m-1',
+
   // variants scope
-  'scope-scope_class:translate-0',
-  'scope-unocss:block',
+  'scope-[.scope\\_class]:translate-0',
+  'scope-[unocss]:block',
+  'scope-[[data-any]]:inline',
 
   // variants - tagged
   'group-focus:p-4',
   'peer-checked:bg-blue-500',
   'parent-hover:text-center',
-  'previous-checked:bg-red-500',
+  'previous-checked/label:bg-red-500',
+  'group-hover:font-10',
+  'group-[:hover]:font-11',
+  'group-[[data-attr]]:font-12',
+  'group-[.as-parent_&]:font-13',
+  'group-[.not-parent]:font-14',
+  'group-hover/label:font-15',
+  'group-[:hover]/label:font-16',
+  'group-[[data-attr]]/label:font-17',
+  'group-[.as-parent_&]/label:font-18',
+  'group-[.not-parent]/label:font-19',
 
   // variants - variables
   '[&:nth-child(2)]:m-10',
@@ -973,6 +1139,8 @@ export const presetMiniTargets: string[] = [
   '[*[open]:readonly_&]:[&[open]:disabled]:m-17',
   '[@supports(display:grid)]:bg-red/33',
   '[@supports(display:grid)]:[*+&]:bg-red/34',
+  'before:[&[data-active=\'true\']]:content-[\'test\']',
+  '[&[data-active="true"]]:bg-red',
 
   // variants - combinators + pseudo
   'checked:next:text-slate-100',
@@ -982,6 +1150,30 @@ export const presetMiniTargets: string[] = [
 
   // variants - multiple parents
   'sm:lt-lg:p-10',
+
+  // variants - aria
+  'aria-[invalid=spelling]:underline-red-600',
+
+  // variants - data
+  'data-[inline]:inline',
+  'data-[invalid~=grammar]:underline-green-600',
+
+  // variants - tagged-data
+  'group-data-[state=open]:font-bold',
+  'peer-data-[state=closed]:border-3',
+
+  // variants - container parent
+  '@container',
+  '@container/label',
+  '@container-normal',
+  '@container/label-normal',
+
+  // variants - container query (@)
+  '@sm:text-red',
+  '@lg-text-red',
+  '@[10.5rem]-text-red',
+  '@xs/label:text-green',
+  '@[100px]/label:text-green',
 ]
 
 export const presetMiniNonTargets = [
@@ -995,4 +1187,33 @@ export const presetMiniNonTargets = [
   '-border-solid',
   '-decoration-none',
   '-color-blue-400',
+
+  // variants - combinator
+  'all:[svg]:fill-red',
+
+  // vertical align
+  'v-random',
+  'v-foo-100%',
+  'vertical-x-100%',
+
+  // arbitrary css properties edge cases that cause invalid output
+  '[name].[hash:9]',
+  '["update:modelValue"]',
+  '[https://en.wikipedia.org/wiki]',
+  '[Baz::class]',
+  '[foo:bar:baz]',
+  '[foo:{bar}]',
+  '[foo:\'bar\',"baz",`]',
+  // escaped arbitrary css properties only allowed in css variables
+  '[cant\~escape:me]',
+  // https://github.com/unocss/unocss/issues/2951
+  '[https://example.com/documentation/](https://example.com/documentation/)',
+
+  // not exists
+  'text-main/50',
+
+  // overmatch
+  'op50>Foo',
+
+  'display-a',
 ]

@@ -1,6 +1,6 @@
 {
   "name": "@unocss/runtime",
-  "version": "0.45.22",
+  "version": "0.58.3",
   "description": "CSS-in-JS Runtime for UnoCSS",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
   "license": "MIT",
@@ -8,7 +8,7 @@
   "homepage": "https://github.com/unocss/unocss/tree/main/packages/runtime#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/unocss/unocss.git",
+    "url": "https://github.com/unocss/unocss",
     "directory": "packages/runtime"
   },
   "bugs": {
@@ -21,8 +21,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -35,9 +35,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run build:node && pnpm run build:cdn",
+    "build": "pnpm run build:node && pnpm run build:cdn && pnpm run build:presets",
     "build:cdn": "tsup src/cdn/*.ts --format iife --minify --out-dir .",
     "build:node": "tsup src/index.ts --format esm,cjs --dts",
+    "build:presets": "tsup src/presets/*.ts --format iife --minify --out-dir .",
     "watch": "tsup src/cdn/*.ts --format iife --watch src --out-dir .",
     "dev": "nr watch & live-server --open=/play"
   },

@@ -65,7 +65,7 @@ export function createSearch(
     input = input.trim()
 
     // mdn
-    if (input.match(/^(mdn|doc):/)) {
+    if (input.startsWith('mdn:') || input.startsWith('doc:')) {
       input = input.slice(4).trim()
       if (!input)
         return docs.value.slice(0, limit)
@@ -73,7 +73,7 @@ export function createSearch(
     }
 
     // guide
-    if (input.match(/^guide:/)) {
+    if (input.startsWith('guide:')) {
       input = input.slice(6).trim()
       if (!input)
         return guides.slice(0, limit)
@@ -81,11 +81,11 @@ export function createSearch(
     }
 
     // random
-    if (input.match(/^rand(om)?:/))
+    if (input.startsWith('rand:') || input.startsWith('random:'))
       return sampleArray(fuseCollection, limit)
 
     const parts = input.split(/\s/g).filter(notNull)
-    const extact = await generateForMultiple(parts)
+    const extract = await generateForMultiple(parts)
 
     await suggestMultiple([
       ...parts,
@@ -103,7 +103,7 @@ export function createSearch(
       .slice(0, limit)
 
     return uniq([
-      ...extact,
+      ...extract,
       ...searchResult,
     ].filter(notNull))
   }
@@ -131,11 +131,9 @@ export function createSearch(
       ...a2zd.map(j => `${i}${j}`),
     ])
 
-    await Promise.all(keys.map(key =>
-      ac
-        .suggest(key)
-        .then(i => i.forEach(j => matched.add(j))),
-    ))
+    await Promise.all(keys.map(key => ac
+      .suggest(key)
+      .then(i => i.forEach(j => matched.add(j)))))
 
     return matched
   }
@@ -214,7 +212,7 @@ export function createSearch(
   function getUrls(css: string) {
     return uniq([...css.matchAll(/\burl\(([^)]+)\)/mg)]
       .map(i => i[1]))
-      .map(i => i.match(/^(['"]).*\1$/) ? i.slice(1, -1) : i)
+      .map(i => /^(['"]).*\1$/.test(i) ? i.slice(1, -1) : i)
   }
 
   function getUtilsOfFeature(name: string) {
@@ -260,6 +258,21 @@ export function createSearch(
     return fuseCollection.length
   }
 
+  function getInfo() {
+    return {
+      version: uno.version,
+      presetsCount: uno.config.presets.length,
+      rulesCount: uno.config.rulesSize,
+      variantsCount: uno.config.variants.length,
+      shortcutsCount: uno.config.shortcuts.length,
+      searchCount: getSearchCount(),
+    }
+  }
+
+  function getThemeColors() {
+    return (uno.config.theme as any).colors || {}
+  }
+
   // docs is lazy loaded
   watchAtMost(
     () => docs.value,
@@ -283,5 +296,9 @@ export function createSearch(
     getItemId,
     getSameRules,
     getSearchCount,
+    getInfo,
+    getThemeColors,
   }
 }
+
+export type SearchObject = ReturnType<typeof createSearch>

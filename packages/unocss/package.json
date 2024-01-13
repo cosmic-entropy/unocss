@@ -1,6 +1,6 @@
 {
   "name": "unocss",
-  "version": "0.45.22",
+  "version": "0.58.3",
   "description": "The instant on-demand Atomic CSS engine.",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
   "license": "MIT",
@@ -8,7 +8,7 @@
   "homepage": "https://github.com/unocss/unocss#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/unocss/unocss.git"
+    "url": "https://github.com/unocss/unocss"
   },
   "sponsor": {
     "url": "https://github.com/sponsors/antfu"
@@ -28,71 +28,76 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     },
     "./preset-attributify": {
       "types": "./dist/preset-attributify.d.ts",
-      "require": "./dist/preset-attributify.cjs",
-      "import": "./dist/preset-attributify.mjs"
+      "import": "./dist/preset-attributify.mjs",
+      "require": "./dist/preset-attributify.cjs"
     },
     "./preset-tagify": {
       "types": "./dist/preset-tagify.d.ts",
-      "require": "./dist/preset-tagify.cjs",
-      "import": "./dist/preset-tagify.mjs"
+      "import": "./dist/preset-tagify.mjs",
+      "require": "./dist/preset-tagify.cjs"
     },
     "./preset-icons": {
       "types": "./dist/preset-icons.d.ts",
-      "require": "./dist/preset-icons.cjs",
-      "import": "./dist/preset-icons.mjs"
+      "import": "./dist/preset-icons.mjs",
+      "require": "./dist/preset-icons.cjs"
     },
     "./preset-mini": {
       "types": "./dist/preset-mini.d.ts",
-      "require": "./dist/preset-mini.cjs",
-      "import": "./dist/preset-mini.mjs"
+      "import": "./dist/preset-mini.mjs",
+      "require": "./dist/preset-mini.cjs"
     },
     "./preset-typography": {
       "types": "./dist/preset-typography.d.ts",
-      "require": "./dist/preset-typography.cjs",
-      "import": "./dist/preset-typography.mjs"
+      "import": "./dist/preset-typography.mjs",
+      "require": "./dist/preset-typography.cjs"
     },
     "./preset-uno": {
       "types": "./dist/preset-uno.d.ts",
-      "require": "./dist/preset-uno.cjs",
-      "import": "./dist/preset-uno.mjs"
+      "import": "./dist/preset-uno.mjs",
+      "require": "./dist/preset-uno.cjs"
     },
     "./preset-web-fonts": {
       "types": "./dist/preset-web-fonts.d.ts",
-      "require": "./dist/preset-web-fonts.cjs",
-      "import": "./dist/preset-web-fonts.mjs"
+      "import": "./dist/preset-web-fonts.mjs",
+      "require": "./dist/preset-web-fonts.cjs"
     },
     "./preset-wind": {
       "types": "./dist/preset-wind.d.ts",
-      "require": "./dist/preset-wind.cjs",
-      "import": "./dist/preset-wind.mjs"
+      "import": "./dist/preset-wind.mjs",
+      "require": "./dist/preset-wind.cjs"
     },
     "./vite": {
       "types": "./dist/vite.d.ts",
-      "require": "./dist/vite.cjs",
-      "import": "./dist/vite.mjs"
+      "import": "./dist/vite.mjs",
+      "require": "./dist/vite.cjs"
     },
     "./astro": {
       "types": "./dist/astro.d.ts",
-      "require": "./dist/astro.cjs",
-      "import": "./dist/astro.mjs"
+      "import": "./dist/astro.mjs",
+      "require": "./dist/astro.cjs"
     },
     "./webpack": {
       "types": "./dist/webpack.d.ts",
-      "require": "./dist/webpack.cjs",
-      "import": "./dist/webpack.mjs"
+      "import": "./dist/webpack.mjs",
+      "require": "./dist/webpack.cjs"
+    },
+    "./postcss": {
+      "types": "./dist/postcss.d.ts",
+      "import": "./dist/postcss.mjs",
+      "require": "./dist/postcss.cjs"
     }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "index.d.ts",
   "files": [
-    "dist",
-    "*.d.ts"
+    "*.d.ts",
+    "dist"
   ],
   "engines": {
     "node": ">=14"
@@ -102,10 +107,14 @@
     "stub": "unbuild --stub"
   },
   "peerDependencies": {
-    "@unocss/webpack": "workspace:*"
+    "@unocss/webpack": "workspace:*",
+    "vite": "^2.9.0 || ^3.0.0-0 || ^4.0.0 || ^5.0.0-0"
   },
   "peerDependenciesMeta": {
     "@unocss/webpack": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   },
@@ -113,6 +122,8 @@
     "@unocss/astro": "workspace:*",
     "@unocss/cli": "workspace:*",
     "@unocss/core": "workspace:*",
+    "@unocss/extractor-arbitrary-variants": "workspace:*",
+    "@unocss/postcss": "workspace:*",
     "@unocss/preset-attributify": "workspace:*",
     "@unocss/preset-icons": "workspace:*",
     "@unocss/preset-mini": "workspace:*",
@@ -123,12 +134,14 @@
     "@unocss/preset-wind": "workspace:*",
     "@unocss/reset": "workspace:*",
     "@unocss/transformer-attributify-jsx": "workspace:*",
+    "@unocss/transformer-attributify-jsx-babel": "workspace:*",
     "@unocss/transformer-compile-class": "workspace:*",
     "@unocss/transformer-directives": "workspace:*",
     "@unocss/transformer-variant-group": "workspace:*",
     "@unocss/vite": "workspace:*"
   },
   "devDependencies": {
-    "@unocss/webpack": "workspace:*"
+    "@unocss/webpack": "workspace:*",
+    "vite": "^5.0.10"
   }
 }

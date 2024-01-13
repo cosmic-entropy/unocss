@@ -2,17 +2,19 @@ import type { VariantObject } from '@unocss/core'
 import { isAttributifySelector } from '@unocss/core'
 import type { AttributifyOptions } from './types'
 
-export const variantsRE = /^(?!\[(?:[^:]+):(?:.+)\]$)((?:.+:)?!?)?(.*)$/
+export const variantsRE = /^(?!.*\[(?:[^:]+):(?:.+)\]$)((?:.+:)?!?)?(.*)$/
 
-export const variantAttributify = (options: AttributifyOptions = {}): VariantObject => {
+export function variantAttributify(options: AttributifyOptions = {}): VariantObject {
   const prefix = options.prefix ?? 'un-'
   const prefixedOnly = options.prefixedOnly ?? false
   const trueToNonValued = options.trueToNonValued ?? false
+  let variantsValueRE: RegExp | false | undefined
 
   return {
     name: 'attributify',
-    match(input) {
+    match(input, { generator }) {
       const match = isAttributifySelector(input)
+
       if (!match)
         return
 
@@ -23,11 +25,26 @@ export const variantAttributify = (options: AttributifyOptions = {}): VariantObj
         return
 
       const content = match[2]
+
       const [, variants = '', body = content] = content.match(variantsRE) || []
       if (body === '~' || (trueToNonValued && body === 'true') || !body)
         return `${variants}${name}`
-      else
-        return `${variants}${name}-${body}`
+
+      if (variantsValueRE == null) {
+        const separators = generator?.config?.separators?.join('|')
+        if (separators)
+          variantsValueRE = new RegExp(`^(.*\\](?:${separators}))(\\[[^\\]]+?\\])$`)
+        else
+          variantsValueRE = false
+      }
+
+      if (variantsValueRE) {
+        const [, bodyVariant, bracketValue] = content.match(variantsValueRE) || []
+        if (bracketValue)
+          return `${bodyVariant}${variants}${name}-${bracketValue}`
+      }
+
+      return `${variants}${name}-${body}`
     },
   }
 }

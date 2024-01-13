@@ -1,12 +1,18 @@
 import type { Extractor } from '../types'
-import { isValidSelector } from '../utils'
 
-export const splitCode = (code: string) => [...new Set(code.split(/\\?[\s'"`;={}]+/g))].filter(isValidSelector)
+export const defaultSplitRE = /[\\:]?[\s'"`;{}]+/g
+export const splitWithVariantGroupRE = /([\\:]?[\s"'`;<>]|:\(|\)"|\)\s)/g
+
+export function splitCode(code: string): string[] {
+  return code.split(defaultSplitRE)
+}
 
 export const extractorSplit: Extractor = {
-  name: 'split',
+  name: '@unocss/core/extractor-split',
   order: 0,
   extract({ code }) {
     return splitCode(code)
   },
 }
+
+export { extractorSplit as extractorDefault }

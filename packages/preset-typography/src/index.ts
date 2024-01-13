@@ -1,7 +1,8 @@
-import type { CSSObject, Preset, RuleContext } from '@unocss/core'
+import type { CSSObject, Preset } from '@unocss/core'
+import { definePreset, toEscapedSelector } from '@unocss/core'
 import type { Theme } from '@unocss/preset-mini'
-import { toEscapedSelector } from '@unocss/core'
 import { getPreflights } from './preflights'
+import type { TypographyCompatibilityOptions } from './types/compatibilityOptions'
 
 /**
  * @public
@@ -23,7 +24,17 @@ export interface TypographyOptions {
    *
    * @defaultValue undefined
    */
-  cssExtend?: Record<string, CSSObject>
+  cssExtend?: Record<string, CSSObject> | ((theme: Theme) => Record<string, CSSObject>)
+
+  /**
+   * Compatibility option. Notice that it will affect some features.
+   * For more instructions, see
+   * [README](https://github.com/unocss/unocss/tree/main/packages/preset-typography)
+   *
+   * @defaultValue undefined
+   */
+  compatibility?: TypographyCompatibilityOptions
+
   /**
    * @deprecated use `selectorName` instead. It will be removed in 1.0.
    */
@@ -34,7 +45,7 @@ export interface TypographyOptions {
  * UnoCSS Preset for Typography
  *
  * ```js
- * // unocss.config.js
+ * // uno.config.ts
  * import { presetAttributify, presetUno, defineConfig, presetTypography } from 'unocss'
  *
  * export default defineConfig({
@@ -49,18 +60,17 @@ export interface TypographyOptions {
  * @returns typography preset
  * @public
  */
-export function presetTypography(options?: TypographyOptions): Preset {
+export const presetTypography = definePreset((options?: TypographyOptions): Preset<Theme> => {
   if (options?.className) {
     console.warn('[unocss:preset-typography] "className" is deprecated. '
     + 'Use "selectorName" instead.')
   }
-  let hasProseClass = false
-  let escapedSelector = ''
+  const escapedSelectors = new Set<string>()
   const selectorName = options?.selectorName || options?.className || 'prose'
   const selectorNameRE = new RegExp(`^${selectorName}$`)
   const colorsRE = new RegExp(`^${selectorName}-([-\\w]+)$`)
   const invertRE = new RegExp(`^${selectorName}-invert$`)
-  const cssExtend = options?.cssExtend
+  const compatibility = options?.compatibility
 
   return {
     name: '@unocss/preset-typography',
@@ -70,16 +80,15 @@ export function presetTypography(options?: TypographyOptions): Preset {
       [
         selectorNameRE,
         (_, { rawSelector }) => {
-          hasProseClass = true
-          escapedSelector = toEscapedSelector(rawSelector)
+          escapedSelectors.add(toEscapedSelector(rawSelector))
           return { 'color': 'var(--un-prose-body)', 'max-width': '65ch' }
         },
         { layer: 'typography' },
       ],
       [
         colorsRE,
-        ([, color], { theme }: RuleContext<Theme>) => {
-          const baseColor = theme.colors?.[color]
+        ([, color], { theme }) => {
+          const baseColor = theme.colors?.[color] as Record<string, string> | string
           if (baseColor == null)
             return
 
@@ -105,8 +114,6 @@ export function presetTypography(options?: TypographyOptions): Preset {
             '--un-prose-invert-code': colorObject[100] ?? baseColor,
             '--un-prose-invert-borders': colorObject[700] ?? baseColor,
             '--un-prose-invert-bg-soft': colorObject[800] ?? baseColor,
-
-            '--un-prose-font-mono': theme.fontFamily?.mono,
           }
         },
         { layer: 'typography' },
@@ -132,13 +139,15 @@ export function presetTypography(options?: TypographyOptions): Preset {
     preflights: [
       {
         layer: 'typography',
-        getCSS: () =>
-          hasProseClass
-            ? getPreflights(escapedSelector, selectorName, cssExtend)
-            : undefined,
+        getCSS: (context) => {
+          if (escapedSelectors.size > 0) {
+            const cssExtend = typeof options?.cssExtend === 'function' ? options.cssExtend(context.theme) : options?.cssExtend
+            return getPreflights(context, { escapedSelectors, selectorName, cssExtend, compatibility })
+          }
+        },
       },
     ],
   }
-}
+})
 
 export default presetTypography

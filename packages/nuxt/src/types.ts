@@ -6,8 +6,16 @@ import type { WebFontsOptions } from '@unocss/preset-web-fonts'
 import type { TypographyOptions } from '@unocss/preset-typography'
 import type { TagifyOptions } from '@unocss/preset-tagify'
 import type { PresetWindOptions } from '@unocss/preset-wind'
+import type { VitePluginConfig } from '@unocss/vite'
 
 export interface UnocssNuxtOptions extends UserConfig {
+  /**
+   * CSS Generation mode. Only work with Vite.
+   *
+   * @see https://unocss.dev/integrations/vite#modes
+   */
+  mode?: VitePluginConfig['mode']
+
   /**
    * Injecting `uno.css` entry
    *
@@ -21,6 +29,14 @@ export interface UnocssNuxtOptions extends UserConfig {
    * @default false
    */
   preflight?: boolean
+
+  /**
+   * Adjust the position of the `uno.css` injection. (Depends on `mode`)
+   *
+   * @default 'first'
+   * @deprecated Temporarily removed, will be added back in the future.
+   */
+  injectPosition?: 'first' | 'last' | number | { after?: string }
 
   /**
    * Installing UnoCSS components
@@ -78,4 +94,13 @@ export interface UnocssNuxtOptions extends UserConfig {
    * @default false
    */
   wind?: boolean | PresetWindOptions
+}
+
+declare module '@nuxt/schema' {
+  interface NuxtHooks {
+    /**
+     * When UnoCSS load config completed.
+     */
+    'unocss:config': (config: UserConfig) => void
+  }
 }

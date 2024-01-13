@@ -37,6 +37,7 @@ const variantSteps = $computed(() => {
   return steps
 })
 const imageUrls = $computed(() => {
+  // @ts-expect-error cast
   return item.urls?.filter(i => i.startsWith('data:image') || i.match(/\.(png|jpg|jpeg|svg)$/ig))
 })
 
@@ -57,8 +58,10 @@ function getRegexperLink(regex: RegExp) {
   return `https://regexper.com/#${encodeURIComponent(regex.source)}`
 }
 
-function getCsGitHubLink(key: RegExp | string, repo = 'unocss/unocss') {
-  return `https://cs.github.com/?scope=${encodeURI(`repo:${repo}`)}&q="${encodeURIComponent(String(key))}"`
+function getGitHubCodeSearchLink(key: RegExp | string, repo = 'unocss/unocss') {
+  // https://docs.github.com/en/search-github/searching-on-github/searching-code#search-within-a-users-or-organizations-repositories
+  const separator = ' '
+  return `https://github.com/search?type=code&q=${encodeURI(`repo:${repo}`)}${separator}"${encodeURIComponent(String(key))}"`
 }
 </script>
 
@@ -117,7 +120,7 @@ function getCsGitHubLink(key: RegExp | string, repo = 'unocss/unocss') {
             <div row flex-wrap gap2 px4 py2 items-center>
               <div gap1>
                 <PresetLabel text-sm op30 hover:op100 :preset="searcher.getPresetOfRule(r)" />
-                <div v-if="typeof r[0] === 'string'" row gap2>
+                <div v-if="typeof r[0] === 'string'" row gap2 items-center>
                   <code text-hex-AB5E3F dark:text-hex-C4704F>"{{ r[0] }}"</code>
                   <div badge-xs-teal mya>
                     static
@@ -130,7 +133,7 @@ function getCsGitHubLink(key: RegExp | string, repo = 'unocss/unocss') {
                 <a text-sm link :href="getRegex101Link(r[0], item.class)" target="_blank">Regex101</a>
                 <a text-sm link :href="getRegexperLink(r[0])" target="_blank">Regexper</a>
               </template>
-              <a text-sm link :href="getCsGitHubLink(r[0])" target="_blank">GitHub</a>
+              <a text-sm link :href="getGitHubCodeSearchLink(r[0])" target="_blank">GitHub</a>
             </div>
           </template>
         </div>

@@ -37,9 +37,9 @@ export interface TransformerAttributifyJsxOptions {
   exclude?: FilterPattern
 }
 
-const elementRE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][-.:0-9_a-zA-Z]*)((?:\s+[^>]*?(?:(?:'[^']*')|(?:"[^"]*"))?)*)\s*(\/?)>/gs
-const attributeRE = /([a-zA-Z()#][\[?a-zA-Z0-9-_:()#%\]?]*)(?:\s*=\s*((?:'[^']*')|(?:"[^"]*")|\S+))?/g
-const classFilterRE = /(className|class)\s*=\s*\{[^\}]*\}/i
+const elementRE = /(<\w[\w:\.$-]*\s)([\s\S]*?)(?=>[\s\S]?<\/[\s\w:\.$-]*>|\/>)/g
+const attributeRE = /(?<![~`!$%^&*()_+\-=[{;':"|,.<>/?]\s*)([a-zA-Z()#][\[?a-zA-Z0-9-_:()#%\]?]*)(?:\s*=\s*((?:'[^']*')|(?:"[^"]*")|\S+))?/g
+const valuedAttributeRE = /((?!\d|-{2}|-\d)[a-zA-Z0-9\u00A0-\uFFFF-_:!%-.~<]+)=(?:["]([^"]*)["]|[']([^']*)[']|[{]((?:[`(](?:[^`)]*)[`)]|[^}])+)[}])/gms
 
 export default function transformerAttributifyJsx(options: TransformerAttributifyJsxOptions = {}): SourceCodeTransformer {
   const {
@@ -66,7 +66,7 @@ export default function transformerAttributifyJsx(options: TransformerAttributif
   )
 
   return {
-    name: 'transformer-jsx',
+    name: '@unocss/transformer-attributify-jsx',
     enforce: 'pre',
     idFilter,
     async transform(code, _, { uno }) {
@@ -74,11 +74,9 @@ export default function transformerAttributifyJsx(options: TransformerAttributif
 
       for (const item of Array.from(code.original.matchAll(elementRE))) {
         // Get the length of the className part, and replace it with the equal length of empty string
-        const classNamePart = item[3].match(classFilterRE)
-        let attributifyPart = item[3]
-        if (classNamePart)
-          attributifyPart = item[3].replace(classFilterRE, ' '.repeat(classNamePart[0].length))
-
+        let attributifyPart = item[2]
+        if (valuedAttributeRE.test(attributifyPart))
+          attributifyPart = attributifyPart.replace(valuedAttributeRE, match => ' '.repeat(match.length))
         for (const attr of attributifyPart.matchAll(attributeRE)) {
           const matchedRule = attr[0].replace(/\:/i, '-')
           if (matchedRule.includes('=') || isBlocked(matchedRule))
@@ -86,8 +84,8 @@ export default function transformerAttributifyJsx(options: TransformerAttributif
 
           tasks.push(uno.parseToken(matchedRule).then((matched) => {
             if (matched) {
-              const tag = item[2]
-              const startIdx = (item.index || 0) + (attr.index || 0) + tag.length + 1
+              const tag = item[1]
+              const startIdx = (item.index || 0) + (attr.index || 0) + tag.length
               const endIdx = startIdx + matchedRule.length
               code.overwrite(startIdx, endIdx, `${matchedRule}=""`)
             }

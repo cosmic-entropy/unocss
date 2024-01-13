@@ -25,7 +25,7 @@ export interface IconsOptions {
    *
    * @default `i-`
    */
-  prefix?: string
+  prefix?: string | string[]
   /**
    * Extra CSS properties applied to the generated CSS
    *
@@ -76,4 +76,9 @@ export interface IconsOptions {
    * - https://cdn.skypack.dev/
    */
   cdn?: string
+
+  /**
+   * Custom fetch function to provide the icon data.
+   */
+  customFetch?: (url: string) => Promise<any>
 }

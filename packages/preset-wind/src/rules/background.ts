@@ -1,15 +1,16 @@
 import type { CSSColorValue, Rule, RuleContext } from '@unocss/core'
-import { colorOpacityToString, colorToString, globalKeywords, handler as h, makeGlobalStaticRules, parseColor, positionMap } from '@unocss/preset-mini/utils'
+import { globalKeywords, h, makeGlobalStaticRules, parseColor, positionMap } from '@unocss/preset-mini/utils'
 import type { Theme } from '@unocss/preset-mini'
+import { colorOpacityToString, colorToString } from '@unocss/rule-utils'
 
-const bgGradientToValue = (cssColor: CSSColorValue | undefined) => {
+function bgGradientToValue(cssColor: CSSColorValue | undefined) {
   if (cssColor)
     return colorToString(cssColor, 0)
 
-  return 'rgba(255,255,255,0)'
+  return 'rgb(255 255 255 / 0)'
 }
 
-const bgGradientColorValue = (mode: string, cssColor: CSSColorValue | undefined, color: string, alpha: any) => {
+function bgGradientColorValue(mode: string, cssColor: CSSColorValue | undefined, color: string, alpha: any) {
   if (cssColor) {
     if (alpha != null)
       return colorToString(cssColor, alpha)
@@ -20,9 +21,9 @@ const bgGradientColorValue = (mode: string, cssColor: CSSColorValue | undefined,
   return colorToString(color, alpha)
 }
 
-const bgGradientColorResolver = (mode: 'from' | 'to' | 'via') =>
-  ([, body]: string[], { theme }: RuleContext<Theme>) => {
-    const data = parseColor(body, theme)
+function bgGradientColorResolver() {
+  return ([, mode, body]: string[], { theme }: RuleContext<Theme>) => {
+    const data = parseColor(body, theme, 'backgroundColor')
 
     if (!data)
       return
@@ -37,50 +38,49 @@ const bgGradientColorResolver = (mode: 'from' | 'to' | 'via') =>
     switch (mode) {
       case 'from':
         return {
-          '--un-gradient-from': colorString,
-          '--un-gradient-to': bgGradientToValue(cssColor),
+          '--un-gradient-from-position': '0%',
+          '--un-gradient-from': `${colorString} var(--un-gradient-from-position)`,
+          '--un-gradient-to-position': '100%',
+          '--un-gradient-to': `${bgGradientToValue(cssColor)} var(--un-gradient-to-position)`,
           '--un-gradient-stops': 'var(--un-gradient-from), var(--un-gradient-to)',
         }
       case 'via':
         return {
+          '--un-gradient-via-position': '50%',
           '--un-gradient-to': bgGradientToValue(cssColor),
-          '--un-gradient-stops': `var(--un-gradient-from), ${colorString}, var(--un-gradient-to)`,
+          '--un-gradient-stops': `var(--un-gradient-from), ${colorString} var(--un-gradient-via-position), var(--un-gradient-to)`,
         }
       case 'to':
         return {
-          '--un-gradient-to': colorString,
+          '--un-gradient-to-position': '100%',
+          '--un-gradient-to': `${colorString} var(--un-gradient-to-position)`,
         }
     }
   }
+}
 
-const bgUrlRE = /^\[url\(.+\)\]$/
-const bgLengthRE = /^\[length:.+\]$/
-const bgPositionRE = /^\[position:.+\]$/
+function bgGradientPositionResolver() {
+  return ([, mode, body]: string[]) => {
+    return {
+      [`--un-gradient-${mode}-position`]: `${Number(h.bracket.cssvar.percent(body)) * 100}%`,
+    }
+  }
+}
+
 export const backgroundStyles: Rule[] = [
-  [/^bg-(.+)$/, ([, d]) => {
-    if (bgUrlRE.test(d))
-      return { '--un-url': h.bracket(d), 'background-image': 'var(--un-url)' }
-    if (bgLengthRE.test(d) && h.bracketOfLength(d) != null)
-      return { 'background-size': h.bracketOfLength(d)!.split(' ').map(e => h.fraction.auto.px.cssvar(e)).join(' ') }
-    if (bgPositionRE.test(d) && h.bracketOfPosition(d) != null)
-      return { 'background-position': h.bracketOfPosition(d)!.split(' ').map(e => h.position.fraction.auto.px.cssvar(e)).join(' ') }
-  }],
-
   // gradients
   [/^bg-gradient-(.+)$/, ([, d]) => ({ '--un-gradient': h.bracket(d) }), {
     autocomplete: ['bg-gradient', 'bg-gradient-(from|to|via)', 'bg-gradient-(from|to|via)-$colors', 'bg-gradient-(from|to|via)-(op|opacity)', 'bg-gradient-(from|to|via)-(op|opacity)-<percent>'],
   }],
   [/^(?:bg-gradient-)?stops-(\[.+\])$/, ([, s]) => ({ '--un-gradient-stops': h.bracket(s) })],
-  [/^(?:bg-gradient-)?from-(.+)$/, bgGradientColorResolver('from')],
-  [/^(?:bg-gradient-)?via-(.+)$/, bgGradientColorResolver('via')],
-  [/^(?:bg-gradient-)?to-(.+)$/, bgGradientColorResolver('to')],
-  [/^(?:bg-gradient-)?from-op(?:acity)?-?(.+)$/, ([, opacity]) => ({ '--un-from-opacity': h.bracket.percent(opacity) })],
-  [/^(?:bg-gradient-)?via-op(?:acity)?-?(.+)$/, ([, opacity]) => ({ '--un-via-opacity': h.bracket.percent(opacity) })],
-  [/^(?:bg-gradient-)?to-op(?:acity)?-?(.+)$/, ([, opacity]) => ({ '--un-to-opacity': h.bracket.percent(opacity) })],
-
+  [/^(?:bg-gradient-)?(from)-(.+)$/, bgGradientColorResolver()],
+  [/^(?:bg-gradient-)?(via)-(.+)$/, bgGradientColorResolver()],
+  [/^(?:bg-gradient-)?(to)-(.+)$/, bgGradientColorResolver()],
+  [/^(?:bg-gradient-)?(from|via|to)-op(?:acity)?-?(.+)$/, ([, position, opacity]) => ({ [`--un-${position}-opacity`]: h.bracket.percent(opacity) })],
+  [/^(from|via|to)-([\d\.]+)%$/, bgGradientPositionResolver()],
   // images
   [/^bg-gradient-((?:repeating-)?(?:linear|radial|conic))$/, ([, s]) => ({
-    'background-image': `${s}-gradient(var(--un-gradient, var(--un-gradient-stops, rgba(255, 255, 255, 0))))`,
+    'background-image': `${s}-gradient(var(--un-gradient, var(--un-gradient-stops, rgb(255 255 255 / 0))))`,
   }), { autocomplete: ['bg-gradient-repeating', 'bg-gradient-(linear|radial|conic)', 'bg-gradient-repeating-(linear|radial|conic)'] }],
   // ignore any center position
   [/^bg-gradient-to-([rltb]{1,2})$/, ([, d]) => {

@@ -9,27 +9,39 @@ import { variantCssLayer, variantInternalLayer, variantScope, variantSelector, v
 import { variantNegative } from './negative'
 import { variantImportant } from './important'
 import { variantCustomMedia, variantPrint } from './media'
-import { partClasses, variantPseudoClassFunctions, variantPseudoClassesAndElements, variantTaggedPseudoClasses } from './pseudo'
+import { variantSupports } from './supports'
+import { variantPartClasses, variantPseudoClassFunctions, variantPseudoClassesAndElements, variantTaggedPseudoClasses } from './pseudo'
+import { variantAria } from './aria'
+import { variantDataAttribute, variantTaggedDataAttributes } from './data'
+import { variantContainerQuery } from './container'
 
-export const variants = (options: PresetMiniOptions): Variant<Theme>[] => [
-  variantVariables,
-  variantCssLayer,
+export function variants(options: PresetMiniOptions): Variant<Theme>[] {
+  return [
+    variantAria,
+    variantDataAttribute,
+    variantCssLayer,
 
-  variantSelector,
-  variantInternalLayer,
-  variantNegative,
-  variantImportant,
-  variantPrint,
-  variantCustomMedia,
-  variantBreakpoints,
-  ...variantCombinators,
+    variantSelector,
+    variantInternalLayer,
+    variantNegative,
+    variantImportant(),
+    variantSupports,
+    variantPrint,
+    variantCustomMedia,
+    variantBreakpoints(),
+    ...variantCombinators,
 
-  variantPseudoClassesAndElements,
-  variantPseudoClassFunctions,
-  ...variantTaggedPseudoClasses(options),
+    variantPseudoClassesAndElements(),
+    variantPseudoClassFunctions(),
+    ...variantTaggedPseudoClasses(options),
 
-  partClasses,
-  ...variantColorsMediaOrClass(options),
-  ...variantLanguageDirections,
-  variantScope,
-]
+    variantPartClasses,
+    ...variantColorsMediaOrClass(options),
+    ...variantLanguageDirections,
+    variantScope,
+
+    variantContainerQuery,
+    variantVariables,
+    ...variantTaggedDataAttributes,
+  ]
+}

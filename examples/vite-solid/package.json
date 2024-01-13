@@ -8,16 +8,20 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "solid-js": "^1.5.5"
+    "solid-js": "^1.8.7"
   },
   "devDependencies": {
-    "@iconify-json/logos": "^1.1.16",
+    "@iconify-json/logos": "^1.1.42",
     "@unocss/core": "link:../../packages/core",
     "@unocss/preset-attributify": "link:../../packages/preset-attributify",
     "@unocss/preset-icons": "link:../../packages/preset-icons",
-    "typescript": "^4.8.3",
+    "typescript": "^5.3.3",
     "unocss": "link:../../packages/unocss",
-    "vite": "^3.1.2",
-    "vite-plugin-solid": "^2.3.3"
+    "vite": "^5.0.10",
+    "vite-plugin-solid": "^2.8.0"
+  },
+  "stackblitz": {
+    "installDependencies": false,
+    "startCommand": "node .stackblitz.mjs && npm install && npm run dev"
   }
 }
