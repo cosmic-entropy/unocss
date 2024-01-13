@@ -10,6 +10,15 @@
   </main>
 </template>
 
+<script>
+  export default {
+    mounted() {
+      const x = 1
+      x = 3
+      consol.log(y)
+    }
+  }
+</script>
 <style>
 @import '@unocss/reset/tailwind.css';
 </style>
